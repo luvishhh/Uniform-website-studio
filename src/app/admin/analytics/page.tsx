@@ -1,6 +1,9 @@
+
+"use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, LineChart, PieChart, Users, ShoppingCart, DollarSign, Activity } from "lucide-react";
-import { ResponsiveContainer, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Pie } from 'recharts'; // Shadcn charts uses recharts
+import { Users, ShoppingCart, DollarSign, Activity } from "lucide-react";
+import { ResponsiveContainer, BarChart, LineChart, PieChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Pie, Cell } from 'recharts'; // Shadcn charts uses recharts
+import React from "react"; // Added for PieChart's Cell element key error
 
 const salesData = [
   { name: 'Jan', sales: 4000, revenue: 2400 },
@@ -11,12 +14,16 @@ const salesData = [
   { name: 'Jun', sales: 2390, revenue: 3800 },
 ];
 
+// Assuming all sales are now for "School & College"
 const categoryDistributionData = [
-  { name: 'School', value: 400 },
-  { name: 'Corporate', value: 300 },
-  { name: 'Healthcare', value: 300 },
+  { name: 'School & College', value: mockProducts.reduce((acc, p) => acc + p.stock, 0) }, // Example: total stock
+  // You might want to break this down by sub-categories or specific institutions if data allows
 ];
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28']; // Colors for Pie chart
+
+// Mock products needed for categoryDistributionData if not globally available
+const mockProducts = [ { stock: 100 }, { stock: 150 }, { stock: 80} ];
+
 
 export default function AdminAnalyticsPage() {
   return (
@@ -95,8 +102,8 @@ export default function AdminAnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Sales by Category</CardTitle>
-            <CardDescription>Distribution of sales across product categories.</CardDescription>
+            <CardTitle>Product Stock Distribution</CardTitle>
+            <CardDescription>Overall stock for the main category.</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px] flex items-center justify-center">
              <ResponsiveContainer width="100%" height="100%">
@@ -113,7 +120,7 @@ export default function AdminAnalyticsPage() {
                         
                     >
                         {categoryDistributionData.map((entry, index) => (
-                        <cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="hsl(var(--background))"/>
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="hsl(var(--background))"/>
                         ))}
                     </Pie>
                     <Tooltip 

@@ -1,35 +1,84 @@
+
+"use client";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockProducts, mockCategories } from "@/lib/mockData";
 import Link from "next/link";
-import { PlusCircle, Search } from "lucide-react";
+import { PlusCircle, Search, Filter as FilterIcon, Package } from "lucide-react"; // Renamed Filter to FilterIcon
+import React, { useState, useMemo } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function AdminProductsPage({ searchParams }: { searchParams?: { category?: string; search?: string; } }) {
-  const currentCategorySlug = searchParams?.category;
-  const searchTerm = searchParams?.search || "";
+const getUniqueValues = (products: typeof mockProducts, key: 'institution' | 'gender') => {
+  return Array.from(new Set(products.map(p => p[key]).filter(Boolean))).sort() as string[];
+};
 
-  let filteredProducts = mockProducts;
+export default function AdminProductsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  if (currentCategorySlug) {
-    const category = mockCategories.find(c => c.slug === currentCategorySlug);
-    if (category) {
-      filteredProducts = mockProducts.filter(p => p.category === category.name);
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "");
+  const [selectedInstitution, setSelectedInstitution] = useState(searchParams.get('institution') || "all");
+  const [selectedGender, setSelectedGender] = useState(searchParams.get('gender') || "all");
+  
+  const schoolCollegeCategory = mockCategories[0]; // Only one category now
+
+  const allInstitutions = useMemo(() => getUniqueValues(mockProducts, 'institution'), []);
+  const allGenders: ('Unisex' | 'Boys' | 'Girls' | string)[] = ['Unisex', 'Boys', 'Girls'];
+
+
+  const filteredProducts = useMemo(() => {
+    let products = mockProducts.filter(p => p.category === schoolCollegeCategory.name);
+
+    if (searchTerm) {
+      products = products.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.institution && p.institution.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
     }
-  }
+    if (selectedInstitution !== "all") {
+      products = products.filter(p => p.institution === selectedInstitution);
+    }
+    if (selectedGender !== "all") {
+      products = products.filter(p => p.gender === selectedGender);
+    }
+    return products;
+  }, [searchTerm, selectedInstitution, selectedGender, schoolCollegeCategory.name]);
 
-  if (searchTerm) {
-    filteredProducts = filteredProducts.filter(p => 
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    updateURLParams({ search: e.target.value, institution: selectedInstitution, gender: selectedGender });
+  };
+
+  const handleInstitutionChange = (value: string) => {
+    setSelectedInstitution(value);
+    updateURLParams({ search: searchTerm, institution: value, gender: selectedGender });
+  };
+  
+  const handleGenderChange = (value: string) => {
+    setSelectedGender(value);
+    updateURLParams({ search: searchTerm, institution: selectedInstitution, gender: value });
+  };
+
+  const updateURLParams = (paramsToUpdate: Record<string, string | null>) => {
+    const currentParams = new URLSearchParams(searchParams.toString());
+    Object.entries(paramsToUpdate).forEach(([key, value]) => {
+      if (value && value !== "all") {
+        currentParams.set(key, value);
+      } else {
+        currentParams.delete(key);
+      }
+    });
+    router.push(`/admin/products?${currentParams.toString()}`, { scroll: false });
+  };
+
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-3xl font-bold font-headline">Manage Products</h1>
+        <h1 className="text-3xl font-bold font-headline">Manage Products ({schoolCollegeCategory.name})</h1>
         <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
           <Link href="/admin/products/new">
             <PlusCircle className="mr-2 h-5 w-5" /> Add New Product
@@ -37,26 +86,46 @@ export default function AdminProductsPage({ searchParams }: { searchParams?: { c
         </Button>
       </div>
 
-      {/* Filters and Search */}
       <div className="p-4 bg-card rounded-lg shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="search-product" className="block text-sm font-medium text-foreground mb-1">Search by Name or ID</label>
+            <label htmlFor="search-product" className="block text-sm font-medium text-foreground mb-1">Search by Name, ID, or Institution</label>
             <div className="relative">
-              <Input type="text" id="search-product" placeholder="Enter product name or ID..." className="pl-10" defaultValue={searchTerm}/>
+              <Input 
+                type="text" 
+                id="search-product" 
+                placeholder="Enter search term..." 
+                className="pl-10" 
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             </div>
           </div>
           <div>
-            <label htmlFor="category-filter" className="block text-sm font-medium text-foreground mb-1">Filter by Category</label>
-            <Select defaultValue={currentCategorySlug || "all"}>
-              <SelectTrigger id="category-filter">
-                <SelectValue placeholder="All Categories" />
+            <label htmlFor="institution-filter" className="block text-sm font-medium text-foreground mb-1">Filter by School/College</label>
+            <Select value={selectedInstitution} onValueChange={handleInstitutionChange}>
+              <SelectTrigger id="institution-filter">
+                <SelectValue placeholder="All Institutions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {mockCategories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
+                <SelectItem value="all">All Institutions</SelectItem>
+                {allInstitutions.map(inst => (
+                  <SelectItem key={inst} value={inst}>{inst}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="gender-filter" className="block text-sm font-medium text-foreground mb-1">Filter by Gender</label>
+            <Select value={selectedGender} onValueChange={handleGenderChange}>
+              <SelectTrigger id="gender-filter">
+                <SelectValue placeholder="All Genders" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Genders</SelectItem>
+                {allGenders.map(gender => (
+                  <SelectItem key={gender} value={gender}>{gender}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -77,12 +146,6 @@ export default function AdminProductsPage({ searchParams }: { searchParams?: { c
             <p className="text-muted-foreground">Try adjusting your search or filters.</p>
         </div>
       )}
-      {/* Pagination would go here for a real app */}
     </div>
   );
 }
-
-// Dummy icon for placeholder
-const Package = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="16.5" x2="7.5" y1="9.4" y2="9.4"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" x2="12" y1="22.08" y2="12"/></svg>
-);

@@ -1,30 +1,27 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockProducts, mockOrders, mockUsers } from "@/lib/mockData";
 import { DollarSign, Package, Users, ShoppingCart, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 // Dummy data for dashboard
 const inventoryCounts = {
-  school: mockProducts.filter(p => p.category === "School").reduce((sum, p) => sum + p.stock, 0),
-  corporate: mockProducts.filter(p => p.category === "Corporate").reduce((sum, p) => sum + p.stock, 0),
-  healthcare: mockProducts.filter(p => p.category === "Healthcare").reduce((sum, p) => sum + p.stock, 0),
+  schoolAndCollege: mockProducts.filter(p => p.category === "School & College").reduce((sum, p) => sum + p.stock, 0),
   totalStock: mockProducts.reduce((sum, p) => sum + p.stock, 0),
 };
 
 const totalRevenue = mockOrders.filter(o => o.status === 'Delivered').reduce((sum, o) => sum + o.totalAmount, 0);
 const totalOrders = mockOrders.length;
-const totalCustomers = mockUsers.filter(u => u.role === 'customer').length;
+const totalRegisteredUsers = mockUsers.length; // Counting all user types
 
 const stats = [
   { title: "Total Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: DollarSign, trend: "+2.5%", trendType: "up" as "up" | "down" },
   { title: "Total Orders", value: totalOrders.toString(), icon: ShoppingCart, trend: "+10", trendType: "up" as "up" | "down" },
-  { title: "Total Customers", value: totalCustomers.toString(), icon: Users, trend: "+5", trendType: "up" as "up" | "down" },
+  { title: "Total Users", value: totalRegisteredUsers.toString(), icon: Users, trend: "+5", trendType: "up" as "up" | "down" },
   { title: "Total Stock", value: inventoryCounts.totalStock.toString(), icon: Package, trend: "-50", trendType: "down" as "up" | "down" },
 ];
 
 const categoryStock = [
-    { name: "School Uniforms", count: inventoryCounts.school },
-    { name: "Corporate Attire", count: inventoryCounts.corporate },
-    { name: "Healthcare Wear", count: inventoryCounts.healthcare },
+    { name: "School & College Uniforms", count: inventoryCounts.schoolAndCollege },
 ]
 
 export default function AdminDashboardPage() {
@@ -32,7 +29,6 @@ export default function AdminDashboardPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-bold font-headline">Admin Dashboard</h1>
       
-      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map(stat => (
           <Card key={stat.title}>
@@ -51,13 +47,12 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Inventory Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Inventory Summary</CardTitle>
-          <CardDescription>Current stock levels across main categories.</CardDescription>
+          <CardDescription>Current stock levels for {mockCategories[0]?.name || 'products'}.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <CardContent className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2"> {/* Adjusted for single category */}
             {categoryStock.map(cat => (
                  <Card key={cat.name} className="p-4">
                     <CardTitle className="text-lg font-medium">{cat.name}</CardTitle>
@@ -68,7 +63,6 @@ export default function AdminDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Recent Orders (Placeholder) */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Orders</CardTitle>
@@ -92,6 +86,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           ))}
+           {mockOrders.length === 0 && <p className="text-center text-muted-foreground py-4">No recent orders.</p>}
         </CardContent>
       </Card>
       

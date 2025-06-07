@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 import Logo from '@/components/shared/Logo';
@@ -43,11 +44,9 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold font-headline text-foreground mb-4">Categories</h3>
+            <h3 className="text-lg font-semibold font-headline text-foreground mb-4">Shop</h3>
             <ul className="space-y-2">
-              <li><Link href="/products/school" className="text-sm hover:text-primary transition-colors">School Uniforms</Link></li>
-              <li><Link href="/products/corporate" className="text-sm hover:text-primary transition-colors">Corporate Attire</Link></li>
-              <li><Link href="/products/healthcare" className="text-sm hover:text-primary transition-colors">Healthcare Wear</Link></li>
+              <li><Link href="/products" className="text-sm hover:text-primary transition-colors">School & College Uniforms</Link></li>
               <li><Link href="/donate" className="text-sm hover:text-primary transition-colors">Donate Uniforms</Link></li>
             </ul>
           </div>

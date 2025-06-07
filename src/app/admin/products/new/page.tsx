@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockCategories } from "@/lib/mockData";
+import { mockCategories } from "@/lib/mockData"; // This will now only have one category
 import Link from "next/link";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,18 +15,22 @@ import React from "react";
 
 export default function AdminAddNewProductPage() {
   const { toast } = useToast();
+  const schoolCollegeCategory = mockCategories[0]; // Assuming there's only one category
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // Form data processing would happen here
-    console.log("Form submitted (mock)");
+    // const formData = new FormData(event.currentTarget);
+    // const productData = Object.fromEntries(formData.entries());
+    // console.log("New Product Data (Mock):", productData);
+    
     toast({
       title: "Product Added (Mock)",
       description: "The new product has been successfully added to the catalog.",
       action: <Button variant="outline" size="sm" onClick={() => console.log('Undo mock')}>Undo</Button>,
     });
     // Potentially redirect or clear form
-    // (event.target as HTMLFormElement).reset();
+    (event.target as HTMLFormElement).reset();
   };
 
   return (
@@ -49,70 +54,83 @@ export default function AdminAddNewProductPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <Label htmlFor="productId">Product ID (SKU)</Label>
-              <Input id="productId" placeholder="e.g., SCH-SHT-WH-M" required />
+              <Input id="productId" name="id" placeholder="e.g., SCH-SHT-WH-M" required />
               <p className="text-xs text-muted-foreground mt-1">Unique identifier for the product.</p>
             </div>
 
             <div>
               <Label htmlFor="productName">Product Name</Label>
-              <Input id="productName" placeholder="e.g., Classic White School Shirt" required />
+              <Input id="productName" name="name" placeholder="e.g., Classic White School Shirt" required />
             </div>
 
             <div>
               <Label htmlFor="productDescription">Description</Label>
-              <Textarea id="productDescription" placeholder="Detailed description of the product..." rows={4} required />
+              <Textarea id="productDescription" name="description" placeholder="Detailed description of the product..." rows={4} required />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="productCategory">Category</Label>
-                <Select required>
+                <Select name="category" defaultValue={schoolCollegeCategory.slug} required>
                   <SelectTrigger id="productCategory">
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockCategories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
-                    ))}
+                    <SelectItem value={schoolCollegeCategory.slug}>{schoolCollegeCategory.name}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="productInstitution">Institution (Optional)</Label>
-                <Input id="productInstitution" placeholder="e.g., Greenwood High" />
+                <Label htmlFor="productInstitution">School/College Name (Institution)</Label>
+                <Input id="productInstitution" name="institution" placeholder="e.g., Greenwood High" />
               </div>
             </div>
+            
+            <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                    <Label htmlFor="productGender">Gender</Label>
+                    <Select name="gender" required>
+                    <SelectTrigger id="productGender">
+                        <SelectValue placeholder="Select gender target" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Unisex">Unisex</SelectItem>
+                        <SelectItem value="Boys">Boys</SelectItem>
+                        <SelectItem value="Girls">Girls</SelectItem>
+                    </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <Label htmlFor="productSizes">Sizes (comma-separated)</Label>
+                    <Input id="productSizes" name="sizes" placeholder="e.g., S, M, L, XL" required />
+                </div>
+            </div>
+
 
             <div className="grid sm:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="productPrice">Price ($)</Label>
-                <Input id="productPrice" type="number" step="0.01" placeholder="e.g., 20.00" required />
+                <Input id="productPrice" name="price" type="number" step="0.01" placeholder="e.g., 20.00" required />
               </div>
               <div>
                 <Label htmlFor="productStock">Stock Quantity</Label>
-                <Input id="productStock" type="number" placeholder="e.g., 150" required />
+                <Input id="productStock" name="stock" type="number" placeholder="e.g., 150" required />
               </div>
             </div>
             
             <div>
-              <Label htmlFor="productSizes">Sizes (comma-separated)</Label>
-              <Input id="productSizes" placeholder="e.g., S, M, L, XL" required />
-            </div>
-
-            <div>
               <Label htmlFor="productColors">Colors (comma-separated, Optional)</Label>
-              <Input id="productColors" placeholder="e.g., White, Light Blue" />
+              <Input id="productColors" name="colors" placeholder="e.g., White, Light Blue" />
             </div>
 
             <div>
               <Label htmlFor="productImageUrl">Image URL</Label>
-              <Input id="productImageUrl" type="url" placeholder="https://placehold.co/600x400.png" required />
+              <Input id="productImageUrl" name="imageUrl" type="url" placeholder="https://placehold.co/600x400.png" required />
               <p className="text-xs text-muted-foreground mt-1">Or use a placeholder like https://placehold.co/600x400.png</p>
             </div>
             
-            {/* Featured Toggle - would use Switch component from shadcn */}
             <div className="flex items-center space-x-2">
-              <input type="checkbox" id="featuredProduct" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+              <Input type="checkbox" id="featuredProduct" name="featured" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
               <Label htmlFor="featuredProduct" className="text-sm font-medium">
                 Mark as Featured Product
               </Label>
