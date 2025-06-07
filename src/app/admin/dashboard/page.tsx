@@ -1,16 +1,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockProducts, mockOrders, mockUsers, mockCategories } from "@/lib/mockData";
-import { DollarSign, Package, Users, ShoppingCart, ArrowUpRight, ArrowDownRight, PlusCircle, Settings, ListOrdered } from "lucide-react";
+import { DollarSign, Users, ShoppingCart, ArrowUpRight, ArrowDownRight, PlusCircle, Settings, ListOrdered } from "lucide-react"; // Removed Package
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-// Dummy data for dashboard
-const inventoryCounts = {
-  schoolStock: mockProducts.filter(p => p.category === "School").reduce((sum, p) => sum + p.stock, 0),
-  collegeStock: mockProducts.filter(p => p.category === "College").reduce((sum, p) => sum + p.stock, 0),
-  totalStock: mockProducts.reduce((sum, p) => sum + p.stock, 0),
-};
 
 const totalRevenue = mockOrders.filter(o => o.status === 'Delivered').reduce((sum, o) => sum + o.totalAmount, 0);
 const totalOrders = mockOrders.length;
@@ -20,20 +13,17 @@ const stats = [
   { title: "Total Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: DollarSign, trend: "+2.5%", trendType: "up" as "up" | "down" },
   { title: "Total Orders", value: totalOrders.toString(), icon: ShoppingCart, trend: "+10", trendType: "up" as "up" | "down" },
   { title: "Total Users", value: totalRegisteredUsers.toString(), icon: Users, trend: "+5", trendType: "up" as "up" | "down" },
-  { title: "Total Stock", value: inventoryCounts.totalStock.toString(), icon: Package, trend: "-50", trendType: "down" as "up" | "down" },
+  // { title: "Total Stock", value: inventoryCounts.totalStock.toString(), icon: Package, trend: "-50", trendType: "down" as "up" | "down" }, // Removed Total Stock
 ];
 
-const categoryStockSummary = [
-    { name: "School Uniforms Stock", count: inventoryCounts.schoolStock },
-    { name: "College Uniforms Stock", count: inventoryCounts.collegeStock },
-]
+// Inventory Summary section is removed
 
 export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold font-headline">Admin Dashboard</h1>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"> {/* Adjusted grid for fewer stats cards */}
         {stats.map(stat => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -51,24 +41,10 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Inventory Summary</CardTitle>
-            <CardDescription>Current stock levels for School and College uniforms.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-2"> 
-              {categoryStockSummary.map(cat => (
-                   <Card key={cat.name} className="p-4">
-                      <CardTitle className="text-lg font-medium">{cat.name}</CardTitle>
-                      <CardDescription className="text-3xl font-bold text-primary mt-1">{cat.count}</CardDescription>
-                      <p className="text-xs text-muted-foreground mt-1">items in stock</p>
-                   </Card>
-              ))}
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 lg:grid-cols-2"> {/* Adjusted grid since inventory summary is removed */}
+        {/* Inventory Summary Card Removed */}
 
-        <Card>
+        <Card className="lg:col-span-1"> {/* Quick Actions might take full width if only one column now, or adjust as needed */}
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Common admin tasks.</CardDescription>
@@ -96,35 +72,41 @@ export default function AdminDashboardPage() {
             </Button>
           </CardContent>
         </Card>
+        
+        <Card className="lg:col-span-1"> {/* Recent Orders card */}
+          <CardHeader>
+            <CardTitle>Recent Orders</CardTitle>
+            <CardDescription>A quick look at the latest orders.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {mockOrders.slice(0, 5).map(order => ( // Show more orders if space allows
+              <div key={order.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                <div>
+                  <p className="font-medium">Order #{order.id.substring(0,8)}...</p>
+                  <p className="text-sm text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()} - {order.items.length} items</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">${order.totalAmount.toFixed(2)}</p>
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                      order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 
+                      order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
+                      order.status === 'Placed' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>{order.status}</span>
+                </div>
+              </div>
+            ))}
+            {mockOrders.length === 0 && <p className="text-center text-muted-foreground py-4">No recent orders.</p>}
+            {mockOrders.length > 5 && (
+                <div className="mt-4 text-center">
+                    <Button variant="link" asChild>
+                        <Link href="/admin/orders">View All Orders</Link>
+                    </Button>
+                </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Orders</CardTitle>
-          <CardDescription>A quick look at the latest orders.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {mockOrders.slice(0, 3).map(order => (
-            <div key={order.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
-              <div>
-                <p className="font-medium">Order #{order.id.substring(0,8)}...</p>
-                <p className="text-sm text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()} - {order.items.length} items</p>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold">${order.totalAmount.toFixed(2)}</p>
-                <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 
-                    order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
-                    order.status === 'Placed' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>{order.status}</span>
-              </div>
-            </div>
-          ))}
-           {mockOrders.length === 0 && <p className="text-center text-muted-foreground py-4">No recent orders.</p>}
-        </CardContent>
-      </Card>
-      
     </div>
   );
 }

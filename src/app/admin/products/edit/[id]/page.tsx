@@ -22,17 +22,18 @@ export default function AdminEditProductPage() {
   const productId = params.id as string;
 
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
-  const [formData, setFormData] = useState<Partial<Product>>({});
+  const [formData, setFormData] = useState<Partial<Omit<Product, 'stock'>> & { sizes?: string; colors?: string }>({}); // Omitting stock from formData
   
   useEffect(() => {
     if (productId) {
       const fetchedProduct = getProductById(productId);
       setProduct(fetchedProduct);
       if (fetchedProduct) {
+        const { stock, ...restOfProduct } = fetchedProduct; // Destructure to remove stock
         setFormData({
-          ...fetchedProduct,
-          sizes: fetchedProduct.sizes.join(", "), 
-          colors: fetchedProduct.colors?.join(", ") || "",
+          ...restOfProduct,
+          sizes: restOfProduct.sizes.join(", "), 
+          colors: restOfProduct.colors?.join(", ") || "",
         });
       }
     }
@@ -169,10 +170,7 @@ export default function AdminEditProductPage() {
                 <Label htmlFor="productPrice">Price ($)</Label>
                 <Input id="productPrice" name="price" type="number" value={formData.price || ""} onChange={handleChange} step="0.01" placeholder="e.g., 20.00" required />
               </div>
-              <div>
-                <Label htmlFor="productStock">Stock Quantity</Label>
-                <Input id="productStock" name="stock" type="number" value={formData.stock || ""} onChange={handleChange} placeholder="e.g., 150" required />
-              </div>
+              {/* Stock Quantity Removed */}
             </div>
             
             <div>

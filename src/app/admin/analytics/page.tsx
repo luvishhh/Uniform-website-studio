@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Users, ShoppingCart, DollarSign, Activity, Calendar as CalendarIcon } from "lucide-react";
 import { ResponsiveContainer, LineChart, PieChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Pie, Cell } from 'recharts';
 import React, { useState, useMemo } from "react";
-import { mockProducts, mockOrders, getProductById, mockCategories } from "@/lib/mockData"; // Ensure mockCategories is imported
+import { mockProducts, mockOrders, getProductById, mockCategories } from "@/lib/mockData";
 import type { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -49,33 +49,6 @@ export default function AdminAnalyticsPage() {
     }
     return dataToDisplay;
   }, [dateRange]);
-
-  const institutionStockDistributionData = useMemo(() => {
-    const academicCategoryNames = mockCategories
-      .filter(cat => cat.slug === 'school' || cat.slug === 'college')
-      .map(cat => cat.name);
-
-    if (academicCategoryNames.length === 0) {
-      console.warn("School or College categories not found in mockData. Stock distribution pie chart may be empty.");
-      return [];
-    }
-
-    const productsInAcademicCategories = mockProducts.filter(p => 
-      academicCategoryNames.includes(p.category) && p.institution
-    );
-    
-    const stockByInstitution: Record<string, number> = productsInAcademicCategories.reduce((acc, product) => {
-      if (product.institution) {
-        acc[product.institution] = (acc[product.institution] || 0) + product.stock;
-      }
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(stockByInstitution).map(([institutionName, stockValue]) => ({
-      name: institutionName,
-      value: stockValue,
-    })).sort((a,b) => b.value - a.value);
-  }, []);
 
   const institutionSalesDistributionData = useMemo(() => {
     const salesByInstitution: Record<string, number> = {};
@@ -210,44 +183,7 @@ export default function AdminAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Stock Distribution by Institution</CardTitle>
-            <CardDescription>Current stock levels for School and College uniforms, broken down by institution.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[400px] flex items-center justify-center">
-            {institutionStockDistributionData.length > 0 ? (
-                 <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={institutionStockDistributionData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={110} 
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent, value }) => `${name}: ${value} units (${(percent * 100).toFixed(0)}%)`}
-                        >
-                            {institutionStockDistributionData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="hsl(var(--background))"/>
-                            ))}
-                        </Pie>
-                        <Tooltip 
-                            contentStyle={{
-                                backgroundColor: "hsl(var(--background))",
-                                borderColor: "hsl(var(--border))",
-                            }}
-                            formatter={(value, name) => [`${value} units in stock`, name]}
-                        />
-                        <Legend wrapperStyle={{fontSize: "12px"}} layout="vertical" align="right" verticalAlign="middle" />
-                    </PieChart>
-                </ResponsiveContainer>
-            ) : (
-                <p className="text-muted-foreground text-center">No stock data by institution available or 'School'/'College' categories not found.</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Product Stock Distribution by Institution chart REMOVED */}
 
         <Card>
           <CardHeader>

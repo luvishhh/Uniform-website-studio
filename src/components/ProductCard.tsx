@@ -28,14 +28,9 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
             className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
             data-ai-hint={product['data-ai-hint'] || product.name.split(" ").slice(0,2).join(" ").toLowerCase()}
           />
-          {product.stock === 0 && !isAdminView && (
-            <Badge variant="destructive" className="absolute top-3 left-3 z-10">Out of Stock</Badge>
-          )}
-          {product.featured && !isAdminView && product.stock > 0 && (
+          {/* Removed stock-based badges */}
+          {product.featured && !isAdminView && (
             <Badge variant="default" className="absolute top-3 left-3 z-10 bg-accent text-accent-foreground">Featured</Badge>
-          )}
-          {isAdminView && (
-            <Badge variant="secondary" className="absolute top-3 left-3 z-10">Stock: {product.stock}</Badge>
           )}
         </Link>
       </CardHeader>
@@ -79,7 +74,7 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
               variant="default" 
               className="flex-1" 
               onClick={() => alert(`Added ${product.name} to cart (mock)`)} 
-              disabled={product.stock === 0}
+              // disabled={product.stock === 0} // Removed stock-based disable
               aria-label={`Add ${product.name} to cart`}
             >
               <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart

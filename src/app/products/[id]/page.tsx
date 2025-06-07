@@ -1,3 +1,4 @@
+
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -83,11 +84,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
             <p className="text-3xl font-semibold text-primary">${product.price.toFixed(2)}</p>
             
-            {product.stock > 0 ? (
-                 <Badge variant="default" className="bg-green-500 text-white">In Stock ({product.stock} available)</Badge>
-              ) : (
-                 <Badge variant="destructive">Out of Stock</Badge>
-            )}
+            {/* Removed stock badge */}
             
             <Separator />
 
@@ -152,10 +149,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button size="lg" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground" disabled={product.stock === 0}>
+              <Button size="lg" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"> {/* Removed disabled={product.stock === 0} */}
                 <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
               </Button>
-              <Button size="lg" variant="outline" className="flex-1" disabled={product.stock === 0}>
+              <Button size="lg" variant="outline" className="flex-1"> {/* Removed disabled={product.stock === 0} */}
                 Buy Now
               </Button>
             </div>

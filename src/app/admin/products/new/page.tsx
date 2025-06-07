@@ -113,10 +113,7 @@ export default function AdminAddNewProductPage() {
                 <Label htmlFor="productPrice">Price ($)</Label>
                 <Input id="productPrice" name="price" type="number" step="0.01" placeholder="e.g., 20.00" required />
               </div>
-              <div>
-                <Label htmlFor="productStock">Stock Quantity</Label>
-                <Input id="productStock" name="stock" type="number" placeholder="e.g., 150" required />
-              </div>
+              {/* Stock Quantity Removed */}
             </div>
             
             <div>

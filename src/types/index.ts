@@ -10,7 +10,7 @@ export type Product = {
   colors?: string[];
   gender: 'Unisex' | 'Boys' | 'Girls';
   imageUrl: string;
-  stock: number;
+  // stock: number; // Removed stock
   featured?: boolean;
   ['data-ai-hint']?: string;
 };
@@ -119,3 +119,4 @@ export type Donation = {
   submissionDate: string;
   status: 'Pending' | 'Collected' | 'Distributed';
 };
+
