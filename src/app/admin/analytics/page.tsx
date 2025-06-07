@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Users, ShoppingCart, DollarSign, Activity, Calendar as CalendarIcon } from "lucide-react";
 import { ResponsiveContainer, LineChart, PieChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Pie, Cell } from 'recharts';
 import React, { useState, useMemo } from "react";
-import { mockProducts, mockCategories } from "@/lib/mockData";
+import { mockProducts, mockCategories, mockOrders, getProductById } from "@/lib/mockData";
 import type { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -28,30 +28,8 @@ const fullSalesData = [
   { date: new Date(2023, 11, 1), sales: 5000, revenue: 6500 }, // Dec 2023
 ];
 
-// Calculate stock distribution by institution
-const schoolCollegeCategoryName = mockCategories.find(cat => cat.slug === 'school-college')?.name;
-let categoryDistributionData: { name: string, value: number }[] = [];
 
-if (schoolCollegeCategoryName) {
-  const productsInSchoolCollege = mockProducts.filter(p => p.category === schoolCollegeCategoryName && p.institution);
-  
-  const stockByInstitution: Record<string, number> = productsInSchoolCollege.reduce((acc, product) => {
-    if (product.institution) {
-      acc[product.institution] = (acc[product.institution] || 0) + product.stock;
-    }
-    return acc;
-  }, {} as Record<string, number>);
-
-  categoryDistributionData = Object.entries(stockByInstitution).map(([institutionName, stockValue]) => ({
-    name: institutionName,
-    value: stockValue,
-  })).sort((a,b) => b.value - a.value);
-
-} else {
-  console.warn("School & College category not found in mockData. Pie chart for stock distribution may be empty.");
-}
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF', '#FF4040', '#40FF4F'];
 
 
 export default function AdminAnalyticsPage() {
@@ -77,6 +55,49 @@ export default function AdminAnalyticsPage() {
     }
     return dataToDisplay;
   }, [dateRange]);
+
+  // Calculate stock distribution by institution
+  const categoryStockDistributionData = useMemo(() => {
+    const schoolCollegeCategoryName = mockCategories.find(cat => cat.slug === 'school-college')?.name;
+    if (!schoolCollegeCategoryName) {
+      console.warn("School & College category not found in mockData. Stock distribution pie chart may be empty.");
+      return [];
+    }
+
+    const productsInSchoolCollege = mockProducts.filter(p => p.category === schoolCollegeCategoryName && p.institution);
+    
+    const stockByInstitution: Record<string, number> = productsInSchoolCollege.reduce((acc, product) => {
+      if (product.institution) {
+        acc[product.institution] = (acc[product.institution] || 0) + product.stock;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(stockByInstitution).map(([institutionName, stockValue]) => ({
+      name: institutionName,
+      value: stockValue,
+    })).sort((a,b) => b.value - a.value);
+  }, []);
+
+  // Calculate sales distribution by institution
+  const institutionSalesDistributionData = useMemo(() => {
+    const salesByInstitution: Record<string, number> = {};
+
+    mockOrders.forEach(order => {
+      order.items.forEach(item => {
+        const productDetails = getProductById(item.productId);
+        if (productDetails && productDetails.institution) {
+          salesByInstitution[productDetails.institution] = (salesByInstitution[productDetails.institution] || 0) + item.quantity;
+        }
+      });
+    });
+
+    return Object.entries(salesByInstitution).map(([institutionName, quantitySold]) => ({
+      name: institutionName,
+      value: quantitySold,
+    })).sort((a, b) => b.value - a.value);
+  }, []);
+
 
   return (
     <div className="space-y-6">
@@ -197,23 +218,23 @@ export default function AdminAnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Product Stock Distribution by Institution</CardTitle>
-            <CardDescription>Stock levels for School & College uniforms, broken down by institution.</CardDescription>
+            <CardDescription>Current stock levels for School & College uniforms, broken down by institution.</CardDescription>
           </CardHeader>
           <CardContent className="h-[400px] flex items-center justify-center">
-            {categoryDistributionData.length > 0 ? (
+            {categoryStockDistributionData.length > 0 ? (
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={categoryDistributionData}
+                            data={categoryStockDistributionData}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
                             outerRadius={110} 
                             fill="#8884d8"
                             dataKey="value"
-                            label={({ name, percent, value }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                            label={({ name, percent, value }) => `${name}: ${value} units (${(percent * 100).toFixed(0)}%)`}
                         >
-                            {categoryDistributionData.map((entry, index) => (
+                            {categoryStockDistributionData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="hsl(var(--background))"/>
                             ))}
                         </Pie>
@@ -222,17 +243,58 @@ export default function AdminAnalyticsPage() {
                                 backgroundColor: "hsl(var(--background))",
                                 borderColor: "hsl(var(--border))",
                             }}
-                            formatter={(value, name) => [`${value} units`, name]}
+                            formatter={(value, name) => [`${value} units in stock`, name]}
                         />
                         <Legend wrapperStyle={{fontSize: "12px"}} layout="vertical" align="right" verticalAlign="middle" />
                     </PieChart>
                 </ResponsiveContainer>
             ) : (
-                <p className="text-muted-foreground text-center">No stock data to display by institution for the 'School & College' category or category not found.</p>
+                <p className="text-muted-foreground text-center">No stock data by institution available or 'School & College' category not found.</p>
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Uniform Sales by Institution</CardTitle>
+            <CardDescription>Total uniform units sold, broken down by institution.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[400px] flex items-center justify-center">
+            {institutionSalesDistributionData.length > 0 ? (
+                 <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={institutionSalesDistributionData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={110} 
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent, value }) => `${name}: ${value} units sold (${(percent * 100).toFixed(0)}%)`}
+                        >
+                            {institutionSalesDistributionData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="hsl(var(--background))"/>
+                            ))}
+                        </Pie>
+                        <Tooltip 
+                            contentStyle={{
+                                backgroundColor: "hsl(var(--background))",
+                                borderColor: "hsl(var(--border))",
+                            }}
+                            formatter={(value, name) => [`${value} units sold`, name]}
+                        />
+                        <Legend wrapperStyle={{fontSize: "12px"}} layout="vertical" align="right" verticalAlign="middle" />
+                    </PieChart>
+                </ResponsiveContainer>
+            ) : (
+                <p className="text-muted-foreground text-center">No sales data by institution available.</p>
+            )}
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );
 }
+
