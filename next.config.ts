@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -18,14 +19,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    allowedDevOrigins: [
-      'https://9000-firebase-studio-1749287199548.cluster-6dx7corvpngoivimwvvljgokdw.cloudworkstations.dev',
-      // It might also be useful to allow localhost if accessing directly for other development tools
-      'http://localhost:9000', // Common port for proxies or other dev tools
-      'http://localhost:9002', // The actual app port
-    ],
-  },
+  allowedDevOrigins: [
+    'https://9000-firebase-studio-1749287199548.cluster-6dx7corvpngoivimwvvljgokdw.cloudworkstations.dev',
+    'https://6000-firebase-studio-1749287199548.cluster-6dx7corvpngoivimwvvljgokdw.cloudworkstations.dev',
+    // It might also be useful to allow localhost if accessing directly for other development tools
+    'http://localhost:9000', // Common port for proxies or other dev tools
+    'http://localhost:9002', // The actual app port
+  ],
 };
 
 export default nextConfig;
