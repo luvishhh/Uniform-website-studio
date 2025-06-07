@@ -105,7 +105,7 @@ export default function HomePage() {
                       </p>
                       <Button
                         size="lg"
-                        className="bg-primary hover:bg-primary/80 text-primary-foreground shadow-lg hover:shadow-primary/30 transition-all duration-300 transform hover:scale-105 px-8 py-3 text-base"
+                        className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-primary/30 transition-all duration-300 transform hover:scale-105 px-8 py-3 text-base"
                         asChild
                       >
                         <Link href={slide.buttonLink} className="flex items-center">
@@ -129,34 +129,31 @@ export default function HomePage() {
 
 
         {/* Why Choose Us Section */}
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-muted/30">
           <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-16">Why UniShop?</h2>
-            <div className="grid md:grid-cols-3 gap-8 md:gap-12 text-center">
-              <div className="flex flex-col items-center p-6 bg-card rounded-lg shadow-md hover:shadow-xl transition-shadow">
-                <ShoppingBag className="h-12 w-12 text-primary mb-4" />
-                <h3 className="text-xl font-semibold font-headline mb-2">Quality First</h3>
-                <p className="text-muted-foreground text-sm">Durable materials and comfortable designs that last the school year.</p>
-              </div>
-              <div className="flex flex-col items-center p-6 bg-card rounded-lg shadow-md hover:shadow-xl transition-shadow">
-                <Shirt className="h-12 w-12 text-primary mb-4" />
-                <h3 className="text-xl font-semibold font-headline mb-2">Perfect Fit</h3>
-                <p className="text-muted-foreground text-sm">Wide range of sizes and styles for all students, ensuring a smart look.</p>
-              </div>
-              <div className="flex flex-col items-center p-6 bg-card rounded-lg shadow-md hover:shadow-xl transition-shadow">
-                <Zap className="h-12 w-12 text-primary mb-4" />
-                <h3 className="text-xl font-semibold font-headline mb-2">Easy Shopping</h3>
-                <p className="text-muted-foreground text-sm">User-friendly online store with secure and fast checkout.</p>
-              </div>
+            <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-4">Why <span className="text-primary">UniShop</span>?</h2>
+            <p className="text-lg text-muted-foreground text-center mb-16 max-w-2xl mx-auto">Your trusted partner for quality, convenience, and community.</p>
+            <div className="grid md:grid-cols-3 gap-8 md:gap-10 text-center">
+              {[
+                { icon: ShoppingBag, title: "Quality First", description: "Durable materials and comfortable designs that last." },
+                { icon: Shirt, title: "Perfect Fit", description: "Wide range of sizes and styles for a smart, professional look." },
+                { icon: Zap, title: "Easy Shopping", description: "User-friendly online store with secure and fast checkout." },
+              ].map((item, index) => (
+                <div key={index} className="flex flex-col items-center p-6 md:p-8 bg-card rounded-xl shadow-lg border border-transparent hover:border-primary/50 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <item.icon className="h-14 w-14 text-primary mb-5" />
+                  <h3 className="text-2xl font-semibold font-headline mb-3">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* School & College Category Section */}
         {schoolCategory && (
-          <section className="py-16 md:py-24 bg-muted/50">
+          <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4 md:px-6">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-4">{schoolCategory.name}</h2>
+              <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-4">{schoolCategory.name}</h2>
               <p className="text-lg text-muted-foreground text-center mb-12 max-w-2xl mx-auto">{schoolCategory.description}</p>
               <div className="grid grid-cols-1 gap-8 md:gap-10">
                 <CategoryCard category={schoolCategory} />
@@ -168,16 +165,21 @@ export default function HomePage() {
 
         {/* Featured Products Section */}
         {featuredProducts.length > 0 && (
-          <section className="py-16 md:py-24 bg-background">
+          <section className="py-16 md:py-24 bg-muted/30">
             <div className="container mx-auto px-4 md:px-6">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-12">Featured Uniforms</h2>
+              <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-12">Featured Uniforms</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
                 {featuredProducts.map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
               <div className="text-center mt-16">
-                <Button variant="outline" size="lg" className="text-base px-8 py-3" asChild>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="text-base px-8 py-3 border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 transform hover:scale-105" 
+                  asChild
+                >
                   <Link href="/products">
                     Browse All Products <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
@@ -195,7 +197,12 @@ export default function HomePage() {
             <p className="text-lg mb-10 max-w-2xl mx-auto text-accent-foreground/90">
               Join our mission to support students in need. Your old uniforms can make a big difference.
             </p>
-            <Button size="lg" variant="outline" className="bg-background text-accent border-background hover:bg-background/90 text-lg px-10 py-7 rounded-md shadow-lg transition-transform hover:scale-105" asChild>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="bg-background text-accent border-transparent hover:bg-background/90 text-lg px-10 py-4 rounded-md shadow-lg transition-transform hover:scale-105" 
+              asChild
+            >
               <Link href="/donate">
                 Learn About Donations
               </Link>
@@ -210,4 +217,3 @@ export default function HomePage() {
 
 // Helper cn function if not globally available
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
-
