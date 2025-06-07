@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { LogIn } from "lucide-react";
+import { LogIn, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type LoginRole = "student" | "institution" | "dealer" | "admin";
@@ -21,6 +21,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [loginRole, setLoginRole] = useState<LoginRole>("student");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,7 +42,7 @@ export default function LoginPage() {
           description: "Redirecting to admin dashboard...",
         });
         router.push("/admin/dashboard");
-        return; // Important to return after successful admin login
+        return; 
       } else {
         toast({
           title: "Admin Login Failed",
@@ -56,13 +57,17 @@ export default function LoginPage() {
     // Mock login for other roles
     toast({
       title: "Login Attempt (Mock)",
-      description: `Attempting to log in as ${loginRole}. See console for details.`,
+      description: `Attempting to log in as ${loginRole}. This is a mock login. See console for details.`,
     });
     // In a real app, you would call an authentication API here
     // and then redirect on success or show an error message for other roles.
     // For example, redirect to /profile or home page
     // router.push('/profile'); 
     setIsLoading(false);
+  };
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -115,9 +120,28 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <div>
+              <div className="relative">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" placeholder="••••••••" required disabled={isLoading}/>
+                <Input 
+                  id="password" 
+                  name="password" 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="••••••••" 
+                  required 
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                 <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-7 w-7 mt-3 text-muted-foreground hover:text-foreground"
+                    onClick={togglePasswordVisibility}
+                    disabled={isLoading}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
               </div>
 
               <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
