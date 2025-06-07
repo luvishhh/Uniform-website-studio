@@ -90,7 +90,7 @@ export default function AdminAnalyticsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-6"> {/* Changed from grid to space-y for vertical stacking */}
         <Card>
           <CardHeader>
             <CardTitle>Sales Trends (Last 6 Months)</CardTitle>
@@ -122,7 +122,7 @@ export default function AdminAnalyticsPage() {
             <CardTitle>Product Stock Distribution by Institution</CardTitle>
             <CardDescription>Stock levels for School & College uniforms, broken down by institution.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[400px] flex items-center justify-center"> {/* Increased height */}
+          <CardContent className="h-[400px] flex items-center justify-center">
             {categoryDistributionData.length > 0 ? (
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -131,7 +131,7 @@ export default function AdminAnalyticsPage() {
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            outerRadius={110} /* Reduced radius */
+                            outerRadius={110} 
                             fill="#8884d8"
                             dataKey="value"
                             label={({ name, percent, value }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
