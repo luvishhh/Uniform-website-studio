@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { mockCategories, mockProducts } from "@/lib/mockData";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ShoppingBag, Shirt, Zap, Gift } from "lucide-react"; // Updated icons
+import { ArrowRight, ShoppingBag, Shirt, Zap, Gift } from "lucide-react";
 
 export default function HomePage() {
   const featuredProducts = mockProducts.filter(p => p.featured).slice(0, 4);
@@ -17,39 +17,44 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="relative bg-primary text-primary-foreground">
-          <div className="container mx-auto px-4 md:px-6 py-20 md:py-32 lg:py-40 flex flex-col md:flex-row items-center gap-8">
-            <div className="md:w-1/2 text-center md:text-left">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline mb-6 leading-tight">
-                Smart Uniforms, Brighter Futures.
-              </h1>
-              <p className="text-lg md:text-xl lg:text-2xl mb-10 text-primary-foreground/90 max-w-xl mx-auto md:mx-0">
-                Outfit your students for success with our range of high-quality, comfortable, and durable school uniforms.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg px-10 py-7 rounded-md shadow-lg transition-transform hover:scale-105" asChild>
-                  <Link href="/products">
-                    Shop All Uniforms <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" className="text-lg px-10 py-7 rounded-md border-primary-foreground/50 hover:bg-primary-foreground/10 transition-colors" asChild>
-                  <Link href="/donate">
-                    Donate Uniforms
-                  </Link>
-                </Button>
-              </div>
-            </div>
-            <div className="md:w-1/2 mt-10 md:mt-0">
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl">
-                <Image 
-                  src="https://placehold.co/800x600.png" 
-                  alt="Students in UniShop uniforms"
-                  layout="fill"
-                  objectFit="cover"
-                  priority
-                  data-ai-hint="students smiling"
-                />
+        {/* Hero Section - New Design */}
+        <section className="relative w-full min-h-[60vh] md:min-h-[70vh] lg:min-h-[calc(100vh-80px)] flex items-center justify-start text-left overflow-hidden">
+          {/* Background Image */}
+          <Image
+            src="https://placehold.co/1920x1080.png"
+            alt="Students wearing UniShop uniforms in a bright setting"
+            fill
+            className="object-cover -z-20" 
+            priority
+            data-ai-hint="students smiling group"
+            sizes="100vw"
+          />
+          {/* Darkening Overlay for Image */}
+          <div className="absolute inset-0 bg-black/30 -z-10"></div>
+
+          {/* Content Container */}
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
+            <div className="max-w-xl md:max-w-2xl lg:max-w-3xl">
+              <div className="bg-background/80 dark:bg-card/70 backdrop-blur-lg p-8 md:p-10 lg:p-12 rounded-xl shadow-2xl">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline mb-6 leading-tight text-primary dark:text-primary-foreground/90">
+                  Smart Uniforms, <br className="hidden xs:block sm:hidden md:block" />
+                  <span className="text-accent dark:text-accent">Brighter Futures.</span>
+                </h1>
+                <p className="text-lg md:text-xl text-foreground/80 dark:text-primary-foreground/80 mb-10">
+                  Outfit your students for success with our range of high-quality, comfortable, and durable school uniforms.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-accent/40 transition-all duration-300 transform hover:scale-105 px-8 py-3">
+                    <Link href="/products" className="flex items-center">
+                      Shop All Uniforms <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" className="bg-background/70 hover:bg-background/90 border-primary text-primary hover:border-primary/70 dark:bg-card/60 dark:hover:bg-card/80 dark:text-primary-foreground dark:border-primary-foreground/50 dark:hover:border-primary-foreground/70 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 px-8 py-3">
+                    <Link href="/donate" className="flex items-center">
+                      Donate Uniforms
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -86,7 +91,6 @@ export default function HomePage() {
               <h2 className="text-3xl md:text-4xl font-bold font-headline text-center mb-4">{schoolCategory.name}</h2>
               <p className="text-lg text-muted-foreground text-center mb-12 max-w-2xl mx-auto">{schoolCategory.description}</p>
               <div className="grid grid-cols-1 gap-8 md:gap-10">
-                 {/* Pass the single category directly */}
                 <CategoryCard category={schoolCategory} />
               </div>
             </div>
