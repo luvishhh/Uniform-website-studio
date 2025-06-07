@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { mockOrders } from "@/lib/mockData";
 import { Search, Filter, PackageCheck, Eye } from "lucide-react";
 import Link from "next/link";
+import React from "react"; // Moved React import to the top for consistency
 
 export default function AdminOrdersPage() {
   // Mock logic for filtering/searching
@@ -143,6 +144,3 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
-
-// Dummy React import if needed
-import React from "react";
