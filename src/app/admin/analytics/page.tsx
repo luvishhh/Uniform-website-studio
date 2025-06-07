@@ -139,7 +139,7 @@ export default function AdminAnalyticsPage() {
                     </PieChart>
                 </ResponsiveContainer>
             ) : (
-                <p className="text-muted-foreground">No stock data to display.</p>
+                <p className="text-muted-foreground">No stock data to display for the 'School & College' category or category not found.</p>
             )}
           </CardContent>
         </Card>
