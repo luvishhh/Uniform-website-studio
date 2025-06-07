@@ -122,7 +122,7 @@ export default function AdminAnalyticsPage() {
             <CardTitle>Product Stock Distribution by Institution</CardTitle>
             <CardDescription>Stock levels for School & College uniforms, broken down by institution.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[350px] flex items-center justify-center">
+          <CardContent className="h-[400px] flex items-center justify-center"> {/* Increased height */}
             {categoryDistributionData.length > 0 ? (
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -131,7 +131,7 @@ export default function AdminAnalyticsPage() {
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            outerRadius={120}
+                            outerRadius={110} /* Reduced radius */
                             fill="#8884d8"
                             dataKey="value"
                             label={({ name, percent, value }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
@@ -160,4 +160,3 @@ export default function AdminAnalyticsPage() {
     </div>
   );
 }
-
