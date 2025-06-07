@@ -2,7 +2,8 @@
 import type { Product, Category, User, Order, CartItem, Donation, StudentUser, InstitutionUser, DealerUser, AdminUser } from '@/types';
 
 export const mockCategories: Category[] = [
-  { id: '1', name: 'School & College', description: 'Uniforms for students of all ages and levels.', imageUrl: 'https://placehold.co/600x400.png', slug: 'school-college', "data-ai-hint": "school college" },
+  { id: 'cat_school', name: 'School', description: 'High-quality uniforms for school students, designed for comfort and durability.', imageUrl: 'https://placehold.co/600x400.png', slug: 'school', "data-ai-hint": "school students" },
+  { id: 'cat_college', name: 'College', description: 'Smart and professional attire for college students, suitable for academics and events.', imageUrl: 'https://placehold.co/600x400.png', slug: 'college', "data-ai-hint": "college students campus" },
 ];
 
 export const mockProducts: Product[] = [
@@ -11,7 +12,7 @@ export const mockProducts: Product[] = [
     name: 'Classic School Shirt - White',
     description: 'Comfortable and durable white school shirt made from breathable cotton. Perfect for everyday school wear.',
     price: 20,
-    category: 'School & College',
+    category: 'School', // Updated
     institution: 'Greenwood High',
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['White', 'Light Blue'],
@@ -26,7 +27,7 @@ export const mockProducts: Product[] = [
     name: 'Navy Blue School Trousers',
     description: 'Smart navy blue school trousers with an adjustable waistband for a comfortable fit.',
     price: 25,
-    category: 'School & College',
+    category: 'School', // Updated
     institution: 'Oakwood Academy',
     sizes: ['M', 'L', 'XL'],
     colors: ['Navy Blue'],
@@ -41,7 +42,7 @@ export const mockProducts: Product[] = [
     name: 'Girls School Skirt - Grey',
     description: 'Pleated grey school skirt, durable and comfortable for all-day wear.',
     price: 22,
-    category: 'School & College',
+    category: 'School', // Updated
     institution: 'Greenwood High',
     sizes: ['S', 'M', 'L'],
     colors: ['Grey'],
@@ -56,7 +57,7 @@ export const mockProducts: Product[] = [
     name: 'College Blazer - Maroon',
     description: 'Smart maroon college blazer with logo embroidery option. Ideal for formal college events.',
     price: 75,
-    category: 'School & College',
+    category: 'College', // Updated
     institution: 'City College',
     sizes: ['M', 'L', 'XL', 'XXL'],
     colors: ['Maroon'],
@@ -71,8 +72,9 @@ export const mockProducts: Product[] = [
     name: 'Sports T-Shirt - Blue',
     description: 'Breathable sports t-shirt for PE classes and college sports.',
     price: 15,
-    category: 'School & College',
-    institution: 'Oakwood Academy',
+    // Assign to school or college based on common use or leave generic. For now, school.
+    category: 'School', // Example assignment
+    institution: 'Oakwood Academy', // This institution is school
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Blue', 'Red', 'Green'],
     gender: 'Unisex',
@@ -85,14 +87,44 @@ export const mockProducts: Product[] = [
     name: 'Lab Coat - Standard',
     description: 'Professional white lab coat for science students.',
     price: 30,
-    category: 'School & College',
-    institution: 'City College',
+    category: 'College', // Often more associated with college/higher ed labs
+    institution: 'City College', // This institution is college
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['White'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     stock: 110,
     "data-ai-hint": "lab coat"
+  },
+   {
+    id: 'prod_7',
+    name: 'Primary School Polo - Red',
+    description: 'Comfortable red polo shirt for primary school students.',
+    price: 18,
+    category: 'School',
+    institution: 'Sunshine Primary',
+    sizes: ['XS', 'S', 'M'],
+    colors: ['Red', 'Yellow'],
+    gender: 'Unisex',
+    imageUrl: 'https://placehold.co/600x400.png',
+    stock: 180,
+    featured: false,
+    "data-ai-hint": "polo shirt"
+  },
+  {
+    id: 'prod_8',
+    name: 'University Hoodie - Grey',
+    description: 'Warm grey hoodie with university logo option.',
+    price: 45,
+    category: 'College',
+    institution: 'State University',
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    colors: ['Grey', 'Navy'],
+    gender: 'Unisex',
+    imageUrl: 'https://placehold.co/600x400.png',
+    stock: 130,
+    featured: true,
+    "data-ai-hint": "university hoodie"
   },
 ];
 
@@ -107,8 +139,8 @@ export const mockUsers: User[] = [
     gradeOrCourse: '10th Grade',
     parentName: 'Queen of Hearts',
     parentContactNumber: '555-1234',
-    passwordHash: 'password123', // In real app, this would be a hash
-    email: 'alice.parent@example.com', // Parent's or student's email
+    passwordHash: 'password123', 
+    email: 'alice.parent@example.com', 
     address: { street: '123 Rabbit Hole', city: 'Fantasy Land', zip: '12345', country: 'Wonderland' }
   } as StudentUser,
   {
@@ -136,6 +168,16 @@ export const mockUsers: User[] = [
     contactNumber: '555-0100',
     passwordHash: 'instPass123',
   } as InstitutionUser,
+   {
+    id: 'inst_2',
+    role: 'institution',
+    email: 'admin@citycollege.edu',
+    institutionName: 'City College',
+    institutionType: 'college',
+    institutionalAddress: '1 University Ave, Higher Education City, HC 12345, USA',
+    contactNumber: '555-0101',
+    passwordHash: 'instPass456',
+  } as InstitutionUser,
   {
     id: 'deal_1',
     role: 'dealer',
@@ -149,8 +191,8 @@ export const mockUsers: User[] = [
   {
     id: 'admin_1',
     role: 'admin',
-    email: 'admin@unishop.com',
-    passwordHash: 'adminPass123', // Actual admin password
+    email: 'Lavishkhare@gmail.com',
+    passwordHash: 'lavish@123', 
     contactNumber: '555-0001',
   } as AdminUser,
 ];
@@ -164,7 +206,7 @@ export const mockCartItems: CartItem[] = [
 export const mockOrders: Order[] = [
   {
     id: 'order_1',
-    userId: 'stud_1', // Alice Wonderland
+    userId: 'stud_1', 
     items: [
       { productId: 'prod_1', name: 'Classic School Shirt - White', price: 20, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "school shirt"},
       { productId: 'prod_3', name: 'Girls School Skirt - Grey', price: 22, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "school skirt" },
@@ -178,7 +220,7 @@ export const mockOrders: Order[] = [
   },
   {
     id: 'order_2',
-    userId: 'stud_2', // Bob The Builder
+    userId: 'stud_2', 
     items: [
       { productId: 'prod_4', name: 'College Blazer - Maroon', price: 75, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'M', "data-ai-hint": "college blazer" },
     ],
@@ -203,9 +245,8 @@ export const getProductById = (id: string): Product | undefined => mockProducts.
 
 export const getProductsByCategorySlug = (categorySlug: string): Product[] => {
   const category = mockCategories.find(c => c.slug === categorySlug);
-  if (!category) return []; // Should not happen if slug is always 'school-college'
+  if (!category) return [];
   return mockProducts.filter(p => p.category === category.name);
 };
 
-// Get a user by ID, useful for profile pages or associating orders
 export const getUserById = (id: string): User | undefined => mockUsers.find(u => u.id === id);

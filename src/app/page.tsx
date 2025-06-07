@@ -38,7 +38,7 @@ const carouselSlides = [
     headline: "Quality You Can Feel, Style They'll Love.",
     description: "Our uniforms blend professional style with everyday practicality, ensuring your team or students always look their best.",
     buttonText: "Explore School Uniforms",
-    buttonLink: "/products",
+    buttonLink: "/products?category=school",
     contentPosition: "left",
   },
   {
@@ -56,7 +56,8 @@ const carouselSlides = [
 
 export default function HomePage() {
   const featuredProducts = mockProducts.filter(p => p.featured).slice(0, 4);
-  const schoolCategory = mockCategories.find(cat => cat.slug === 'school-college');
+  const schoolCategory = mockCategories.find(cat => cat.slug === 'school');
+  const collegeCategory = mockCategories.find(cat => cat.slug === 'college');
   const autoplay = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true }));
 
 
@@ -149,18 +150,20 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* School & College Category Section */}
-        {schoolCategory && (
-          <section className="py-16 md:py-24 bg-background">
-            <div className="container mx-auto px-4 md:px-6">
-              <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-4">{schoolCategory.name}</h2>
-              <p className="text-lg text-muted-foreground text-center mb-12 max-w-2xl mx-auto">{schoolCategory.description}</p>
-              <div className="grid grid-cols-1 gap-8 md:gap-10">
+        {/* Categories Section */}
+        <section className="py-16 md:py-24 bg-background">
+          <div className="container mx-auto px-4 md:px-6">
+            <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-12">Our Uniform Categories</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+              {schoolCategory && (
                 <CategoryCard category={schoolCategory} />
-              </div>
+              )}
+              {collegeCategory && (
+                <CategoryCard category={collegeCategory} />
+              )}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
         
 
         {/* Featured Products Section */}

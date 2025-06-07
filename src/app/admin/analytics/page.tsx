@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Users, ShoppingCart, DollarSign, Activity, Calendar as CalendarIcon } from "lucide-react";
 import { ResponsiveContainer, LineChart, PieChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Pie, Cell } from 'recharts';
 import React, { useState, useMemo } from "react";
-import { mockProducts, mockCategories, mockOrders, getProductById } from "@/lib/mockData";
+import { mockProducts, mockOrders, getProductById, mockCategories } from "@/lib/mockData"; // Ensure mockCategories is imported
 import type { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -12,42 +12,36 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
-// Expanded sales data for a full year to make date range filtering more meaningful
 const fullSalesData = [
-  { date: new Date(2023, 0, 1), sales: 4000, revenue: 2400 }, // Jan 2023
-  { date: new Date(2023, 1, 1), sales: 3000, revenue: 1398 }, // Feb 2023
-  { date: new Date(2023, 2, 1), sales: 2000, revenue: 9800 }, // Mar 2023
-  { date: new Date(2023, 3, 1), sales: 2780, revenue: 3908 }, // Apr 2023
-  { date: new Date(2023, 4, 1), sales: 1890, revenue: 4800 }, // May 2023
-  { date: new Date(2023, 5, 1), sales: 2390, revenue: 3800 }, // Jun 2023
-  { date: new Date(2023, 6, 1), sales: 3200, revenue: 4200 }, // Jul 2023
-  { date: new Date(2023, 7, 1), sales: 3500, revenue: 4500 }, // Aug 2023
-  { date: new Date(2023, 8, 1), sales: 2800, revenue: 3900 }, // Sep 2023
-  { date: new Date(2023, 9, 1), sales: 4100, revenue: 5200 }, // Oct 2023
-  { date: new Date(2023, 10, 1), sales: 4500, revenue: 5800 }, // Nov 2023
-  { date: new Date(2023, 11, 1), sales: 5000, revenue: 6500 }, // Dec 2023
+  { date: new Date(2023, 0, 1), sales: 4000, revenue: 2400 }, 
+  { date: new Date(2023, 1, 1), sales: 3000, revenue: 1398 }, 
+  { date: new Date(2023, 2, 1), sales: 2000, revenue: 9800 }, 
+  { date: new Date(2023, 3, 1), sales: 2780, revenue: 3908 }, 
+  { date: new Date(2023, 4, 1), sales: 1890, revenue: 4800 }, 
+  { date: new Date(2023, 5, 1), sales: 2390, revenue: 3800 }, 
+  { date: new Date(2023, 6, 1), sales: 3200, revenue: 4200 }, 
+  { date: new Date(2023, 7, 1), sales: 3500, revenue: 4500 }, 
+  { date: new Date(2023, 8, 1), sales: 2800, revenue: 3900 }, 
+  { date: new Date(2023, 9, 1), sales: 4100, revenue: 5200 }, 
+  { date: new Date(2023, 10, 1), sales: 4500, revenue: 5800 },
+  { date: new Date(2023, 11, 1), sales: 5000, revenue: 6500 },
 ];
-
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF', '#FF4040', '#40FF4F'];
 
-
 export default function AdminAnalyticsPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(2023, 6, 1), // Default to July 1, 2023
-    to: new Date(2023, 11, 31),  // Default to December 31, 2023
+    from: new Date(2023, 6, 1), 
+    to: new Date(2023, 11, 31), 
   });
 
   const displayedSalesData = useMemo(() => {
     let dataToDisplay = fullSalesData.map(d => ({...d, name: format(d.date, 'MMM yy')}));
-
     if (dateRange?.from) {
       const fromDate = dateRange.from;
       const toDate = dateRange.to || fromDate; 
-
       const toEndOfDay = new Date(toDate);
       toEndOfDay.setHours(23, 59, 59, 999);
-
       dataToDisplay = dataToDisplay.filter(item => {
         const itemDate = item.date;
         return itemDate >= fromDate && itemDate <= toEndOfDay;
@@ -56,17 +50,21 @@ export default function AdminAnalyticsPage() {
     return dataToDisplay;
   }, [dateRange]);
 
-  // Calculate stock distribution by institution
-  const categoryStockDistributionData = useMemo(() => {
-    const schoolCollegeCategoryName = mockCategories.find(cat => cat.slug === 'school-college')?.name;
-    if (!schoolCollegeCategoryName) {
-      console.warn("School & College category not found in mockData. Stock distribution pie chart may be empty.");
+  const institutionStockDistributionData = useMemo(() => {
+    const academicCategoryNames = mockCategories
+      .filter(cat => cat.slug === 'school' || cat.slug === 'college')
+      .map(cat => cat.name);
+
+    if (academicCategoryNames.length === 0) {
+      console.warn("School or College categories not found in mockData. Stock distribution pie chart may be empty.");
       return [];
     }
 
-    const productsInSchoolCollege = mockProducts.filter(p => p.category === schoolCollegeCategoryName && p.institution);
+    const productsInAcademicCategories = mockProducts.filter(p => 
+      academicCategoryNames.includes(p.category) && p.institution
+    );
     
-    const stockByInstitution: Record<string, number> = productsInSchoolCollege.reduce((acc, product) => {
+    const stockByInstitution: Record<string, number> = productsInAcademicCategories.reduce((acc, product) => {
       if (product.institution) {
         acc[product.institution] = (acc[product.institution] || 0) + product.stock;
       }
@@ -79,19 +77,16 @@ export default function AdminAnalyticsPage() {
     })).sort((a,b) => b.value - a.value);
   }, []);
 
-  // Calculate sales distribution by institution
   const institutionSalesDistributionData = useMemo(() => {
     const salesByInstitution: Record<string, number> = {};
-
     mockOrders.forEach(order => {
       order.items.forEach(item => {
         const productDetails = getProductById(item.productId);
-        if (productDetails && productDetails.institution) {
+        if (productDetails && productDetails.institution && (productDetails.category === 'School' || productDetails.category === 'College')) {
           salesByInstitution[productDetails.institution] = (salesByInstitution[productDetails.institution] || 0) + item.quantity;
         }
       });
     });
-
     return Object.entries(salesByInstitution).map(([institutionName, quantitySold]) => ({
       name: institutionName,
       value: quantitySold,
@@ -218,14 +213,14 @@ export default function AdminAnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Product Stock Distribution by Institution</CardTitle>
-            <CardDescription>Current stock levels for School & College uniforms, broken down by institution.</CardDescription>
+            <CardDescription>Current stock levels for School and College uniforms, broken down by institution.</CardDescription>
           </CardHeader>
           <CardContent className="h-[400px] flex items-center justify-center">
-            {categoryStockDistributionData.length > 0 ? (
+            {institutionStockDistributionData.length > 0 ? (
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={categoryStockDistributionData}
+                            data={institutionStockDistributionData}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
@@ -234,7 +229,7 @@ export default function AdminAnalyticsPage() {
                             dataKey="value"
                             label={({ name, percent, value }) => `${name}: ${value} units (${(percent * 100).toFixed(0)}%)`}
                         >
-                            {categoryStockDistributionData.map((entry, index) => (
+                            {institutionStockDistributionData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="hsl(var(--background))"/>
                             ))}
                         </Pie>
@@ -249,7 +244,7 @@ export default function AdminAnalyticsPage() {
                     </PieChart>
                 </ResponsiveContainer>
             ) : (
-                <p className="text-muted-foreground text-center">No stock data by institution available or 'School & College' category not found.</p>
+                <p className="text-muted-foreground text-center">No stock data by institution available or 'School'/'College' categories not found.</p>
             )}
           </CardContent>
         </Card>
@@ -257,7 +252,7 @@ export default function AdminAnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Uniform Sales by Institution</CardTitle>
-            <CardDescription>Total uniform units sold, broken down by institution.</CardDescription>
+            <CardDescription>Total uniform units sold (School and College), broken down by institution.</CardDescription>
           </CardHeader>
           <CardContent className="h-[400px] flex items-center justify-center">
             {institutionSalesDistributionData.length > 0 ? (
@@ -297,4 +292,3 @@ export default function AdminAnalyticsPage() {
     </div>
   );
 }
-

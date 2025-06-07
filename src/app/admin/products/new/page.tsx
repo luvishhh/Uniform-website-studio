@@ -7,15 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockCategories } from "@/lib/mockData"; // This will now only have one category
+import { mockCategories } from "@/lib/mockData"; 
 import Link from "next/link";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
+import type { Category } from "@/types";
 
 export default function AdminAddNewProductPage() {
   const { toast } = useToast();
-  const schoolCollegeCategory = mockCategories[0]; // Assuming there's only one category
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,7 +29,6 @@ export default function AdminAddNewProductPage() {
       description: "The new product has been successfully added to the catalog.",
       action: <Button variant="outline" size="sm" onClick={() => console.log('Undo mock')}>Undo</Button>,
     });
-    // Potentially redirect or clear form
     (event.target as HTMLFormElement).reset();
   };
 
@@ -71,12 +70,14 @@ export default function AdminAddNewProductPage() {
             <div className="grid sm:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="productCategory">Category</Label>
-                <Select name="category" defaultValue={schoolCollegeCategory.slug} required>
+                <Select name="category" required>
                   <SelectTrigger id="productCategory">
-                    <SelectValue />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={schoolCollegeCategory.slug}>{schoolCollegeCategory.name}</SelectItem>
+                    {(mockCategories as Category[]).map(cat => (
+                      <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

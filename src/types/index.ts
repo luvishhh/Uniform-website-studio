@@ -4,11 +4,11 @@ export type Product = {
   name: string;
   description: string;
   price: number;
-  category: 'School & College'; // Updated category
+  category: 'School' | 'College'; // Updated category
   institution?: string; // School/College Name
   sizes: string[];
   colors?: string[];
-  gender: 'Unisex' | 'Boys' | 'Girls'; // New field
+  gender: 'Unisex' | 'Boys' | 'Girls';
   imageUrl: string;
   stock: number;
   featured?: boolean;
@@ -17,10 +17,10 @@ export type Product = {
 
 export type Category = {
   id:string;
-  name: 'School & College'; // Updated category name
+  name: 'School' | 'College'; // Updated category name
   description: string;
   imageUrl: string;
-  slug: string;
+  slug: 'school' | 'college'; // Updated slug options
   ['data-ai-hint']?: string;
 };
 

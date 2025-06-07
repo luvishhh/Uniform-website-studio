@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getProductById, mockCategories } from "@/lib/mockData";
-import type { Product } from "@/types";
+import type { Product, Category } from "@/types";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -21,11 +21,9 @@ export default function AdminEditProductPage() {
   const { toast } = useToast();
   const productId = params.id as string;
 
-  const [product, setProduct] = useState<Product | null | undefined>(undefined); // undefined for loading, null for not found
+  const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [formData, setFormData] = useState<Partial<Product>>({});
   
-  const schoolCollegeCategory = mockCategories[0]; // Assuming there's only one category
-
   useEffect(() => {
     if (productId) {
       const fetchedProduct = getProductById(productId);
@@ -33,8 +31,8 @@ export default function AdminEditProductPage() {
       if (fetchedProduct) {
         setFormData({
           ...fetchedProduct,
-          sizes: fetchedProduct.sizes.join(", "), // Convert array to comma-separated string for input
-          colors: fetchedProduct.colors?.join(", ") || "", // Same for colors
+          sizes: fetchedProduct.sizes.join(", "), 
+          colors: fetchedProduct.colors?.join(", ") || "",
         });
       }
     }
@@ -51,29 +49,20 @@ export default function AdminEditProductPage() {
   
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'category') {
+      setFormData(prev => ({ ...prev, category: value as 'School' | 'College' }));
+    }
   };
 
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // In a real app, you would send this data to an API endpoint
-    // For mock, we'll just show a toast and log.
     
-    // Convert sizes and colors back to arrays if needed by your backend
-    // const dataToSubmit = {
-    //   ...formData,
-    //   sizes: typeof formData.sizes === 'string' ? formData.sizes.split(",").map(s => s.trim()).filter(Boolean) : product?.sizes,
-    //   colors: typeof formData.colors === 'string' ? formData.colors.split(",").map(c => c.trim()).filter(Boolean) : product?.colors,
-    // };
-    // console.log("Updated Product Data (Mock):", dataToSubmit);
-
     toast({
       title: "Product Updated (Mock)",
       description: `${formData.name || product?.name} has been successfully updated.`,
       action: <Button variant="outline" size="sm" onClick={() => console.log('Undo mock update')}>Undo</Button>,
     });
-    // Optionally redirect:
-    // router.push("/admin/products");
   };
 
   if (product === undefined) {
@@ -138,15 +127,16 @@ export default function AdminEditProductPage() {
             <div className="grid sm:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="productCategory">Category</Label>
-                <Select name="category" value={schoolCollegeCategory.slug} disabled>
-                  <SelectTrigger id="productCategory" className="bg-muted/50 cursor-not-allowed">
+                <Select name="category" value={formData.category || ""} onValueChange={(value) => handleSelectChange("category", value)} required>
+                  <SelectTrigger id="productCategory">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={schoolCollegeCategory.slug}>{schoolCollegeCategory.name}</SelectItem>
+                     {(mockCategories as Category[]).map(cat => (
+                      <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                 <p className="text-xs text-muted-foreground mt-1">Category cannot be changed (currently only one category exists).</p>
               </div>
               <div>
                 <Label htmlFor="productInstitution">School/College Name (Institution)</Label>

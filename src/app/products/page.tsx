@@ -3,13 +3,11 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/ProductCard";
-import { mockProducts, mockCategories } from "@/lib/mockData";
+import { mockProducts, mockCategories, getProductsByCategorySlug } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox"; // Keep for potential direct use, though DropdownMenuCheckboxItem is primary
 import { Label } from "@/components/ui/label";
 import { Search, Filter, X, ChevronDown } from "lucide-react";
-import Link from "next/link";
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -22,10 +20,9 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-// Helper to get unique values for filters
 const getUniqueValues = (products: typeof mockProducts, key: keyof typeof mockProducts[0]) => {
   const values = products.map(p => p[key]);
-  if (key === 'sizes') { // Sizes is an array
+  if (key === 'sizes') { 
     return Array.from(new Set(products.flatMap(p => p.sizes))).sort();
   }
   return Array.from(new Set(values.filter(Boolean))).sort() as string[];
@@ -36,7 +33,9 @@ export default function ProductsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const initialCategorySlug = searchParams.get('category');
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategorySlug);
   const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>(searchParams.getAll('institution') || []);
   const [selectedSizes, setSelectedSizes] = useState<string[]>(searchParams.getAll('size') || []);
   const [selectedGenders, setSelectedGenders] = useState<string[]>(searchParams.getAll('gender') || []);
@@ -46,10 +45,10 @@ export default function ProductsPage() {
   const allSizes = useMemo(() => getUniqueValues(mockProducts, 'sizes'), []);
   const allGenders: ('Unisex' | 'Boys' | 'Girls')[] = ['Unisex', 'Boys', 'Girls'];
 
-
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchTerm) params.set('search', searchTerm);
+    if (selectedCategory) params.set('category', selectedCategory);
     selectedInstitutions.forEach(inst => params.append('institution', inst));
     selectedSizes.forEach(size => params.append('size', size));
     selectedGenders.forEach(gender => params.append('gender', gender));
@@ -57,11 +56,11 @@ export default function ProductsPage() {
     
     router.replace(`/products?${params.toString()}`, { scroll: false });
 
-  }, [searchTerm, selectedInstitutions, selectedSizes, selectedGenders, sortBy, router]);
+  }, [searchTerm, selectedCategory, selectedInstitutions, selectedSizes, selectedGenders, sortBy, router]);
 
 
   const filteredProducts = useMemo(() => {
-    let products = [...mockProducts]; 
+    let products = selectedCategory ? getProductsByCategorySlug(selectedCategory) : [...mockProducts]; 
 
     if (searchTerm) {
       products = products.filter(p =>
@@ -91,7 +90,7 @@ export default function ProductsPage() {
       return 0;
     });
     return products;
-  }, [searchTerm, selectedInstitutions, selectedSizes, selectedGenders, sortBy]);
+  }, [searchTerm, selectedCategory, selectedInstitutions, selectedSizes, selectedGenders, sortBy]);
   
   const handleFilterChange = (
     value: string, 
@@ -104,16 +103,26 @@ export default function ProductsPage() {
     setter(newValues);
   };
 
+  const handleCategoryChange = (slug: string | null) => {
+    setSelectedCategory(slug);
+  };
+
   const clearFilters = () => {
     setSearchTerm("");
+    setSelectedCategory(null);
     setSelectedInstitutions([]);
     setSelectedSizes([]);
     setSelectedGenders([]);
     setSortBy("name_asc");
-    // router.replace('/products', { scroll: false }); // useEffect will handle this
   };
 
-  const categoryName = mockCategories[0]?.name || "All Products";
+  const pageTitle = useMemo(() => {
+    if (selectedCategory) {
+      const category = mockCategories.find(c => c.slug === selectedCategory);
+      return category ? `${category.name} Uniforms` : "Shop Uniforms";
+    }
+    return "Shop All Uniforms";
+  }, [selectedCategory]);
 
   const getSortByLabel = () => {
     if (sortBy === 'price_asc') return 'Price: Low to High';
@@ -128,12 +137,11 @@ export default function ProductsPage() {
       <Header />
       <main className="flex-grow container mx-auto px-4 md:px-6 py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold font-headline">{categoryName}</h1>
+          <h1 className="text-4xl font-bold font-headline">{pageTitle}</h1>
           <p className="text-muted-foreground mt-2">Browse our collection of high-quality uniforms.</p>
         </div>
 
-        {/* Horizontal Filter Bar */}
-        <div className="mb-6 p-4 bg-card rounded-lg shadow-md sticky top-[70px] md:top-[70px] z-30"> {/* Adjusted sticky top value */}
+        <div className="mb-6 p-4 bg-card rounded-lg shadow-md sticky top-[70px] md:top-[70px] z-30">
           <div className="flex flex-col md:flex-row gap-4 mb-4">
             <div className="w-full md:flex-grow">
               <Label htmlFor="search-products" className="sr-only">Search Products</Label>
@@ -151,6 +159,26 @@ export default function ProductsPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-3 items-center">
+            {/* Category Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between min-w-[160px]">
+                  Category: {selectedCategory ? mockCategories.find(c=>c.slug === selectedCategory)?.name : 'All'}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => handleCategoryChange(null)}>All Categories</DropdownMenuItem>
+                {mockCategories.map(cat => (
+                  <DropdownMenuItem key={cat.slug} onSelect={() => handleCategoryChange(cat.slug)}>
+                    {cat.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Institution Filter Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -244,7 +272,6 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Products Grid */}
         <div className="mt-8">
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -263,7 +290,6 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
-        {/* Pagination would go here for a real app */}
       </main>
       <Footer />
     </div>

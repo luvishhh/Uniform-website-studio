@@ -6,11 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockProducts, mockCategories } from "@/lib/mockData";
 import Link from "next/link";
-import { PlusCircle, Search, Filter as FilterIcon, Package } from "lucide-react"; // Renamed Filter to FilterIcon
-import React, { useState, useMemo } from "react";
+import { PlusCircle, Search, Filter as FilterIcon, Package, ChevronDown } from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
-const getUniqueValues = (products: typeof mockProducts, key: 'institution' | 'gender') => {
+
+const getUniqueValues = (products: typeof mockProducts, key: 'institution' | 'gender' | 'category') => {
+  if (key === 'category') {
+     return Array.from(new Set(products.map(p => p.category))).sort() as string[];
+  }
   return Array.from(new Set(products.map(p => p[key]).filter(Boolean))).sort() as string[];
 };
 
@@ -19,18 +32,21 @@ export default function AdminProductsPage() {
   const searchParams = useSearchParams();
 
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "");
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || "all");
   const [selectedInstitution, setSelectedInstitution] = useState(searchParams.get('institution') || "all");
   const [selectedGender, setSelectedGender] = useState(searchParams.get('gender') || "all");
   
-  const schoolCollegeCategory = mockCategories[0]; // Only one category now
-
+  const allCategories = useMemo(() => getUniqueValues(mockProducts, 'category'), []);
   const allInstitutions = useMemo(() => getUniqueValues(mockProducts, 'institution'), []);
   const allGenders: ('Unisex' | 'Boys' | 'Girls' | string)[] = ['Unisex', 'Boys', 'Girls'];
 
 
   const filteredProducts = useMemo(() => {
-    let products = mockProducts.filter(p => p.category === schoolCollegeCategory.name);
+    let products = mockProducts;
 
+    if (selectedCategory !== "all") {
+      products = products.filter(p => p.category === selectedCategory);
+    }
     if (searchTerm) {
       products = products.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,22 +61,7 @@ export default function AdminProductsPage() {
       products = products.filter(p => p.gender === selectedGender);
     }
     return products;
-  }, [searchTerm, selectedInstitution, selectedGender, schoolCollegeCategory.name]);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    updateURLParams({ search: e.target.value, institution: selectedInstitution, gender: selectedGender });
-  };
-
-  const handleInstitutionChange = (value: string) => {
-    setSelectedInstitution(value);
-    updateURLParams({ search: searchTerm, institution: value, gender: selectedGender });
-  };
-  
-  const handleGenderChange = (value: string) => {
-    setSelectedGender(value);
-    updateURLParams({ search: searchTerm, institution: selectedInstitution, gender: value });
-  };
+  }, [searchTerm, selectedCategory, selectedInstitution, selectedGender]);
 
   const updateURLParams = (paramsToUpdate: Record<string, string | null>) => {
     const currentParams = new URLSearchParams(searchParams.toString());
@@ -74,11 +75,31 @@ export default function AdminProductsPage() {
     router.push(`/admin/products?${currentParams.toString()}`, { scroll: false });
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    updateURLParams({ search: e.target.value, category: selectedCategory, institution: selectedInstitution, gender: selectedGender });
+  };
+  
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    updateURLParams({ search: searchTerm, category: value, institution: selectedInstitution, gender: selectedGender });
+  };
+
+  const handleInstitutionChange = (value: string) => {
+    setSelectedInstitution(value);
+    updateURLParams({ search: searchTerm, category: selectedCategory, institution: value, gender: selectedGender });
+  };
+  
+  const handleGenderChange = (value: string) => {
+    setSelectedGender(value);
+    updateURLParams({ search: searchTerm, category: selectedCategory, institution: selectedInstitution, gender: value });
+  };
+
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-3xl font-bold font-headline">Manage Products ({schoolCollegeCategory.name})</h1>
+        <h1 className="text-3xl font-bold font-headline">Manage Products</h1>
         <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
           <Link href="/admin/products/new">
             <PlusCircle className="mr-2 h-5 w-5" /> Add New Product
@@ -87,14 +108,14 @@ export default function AdminProductsPage() {
       </div>
 
       <div className="p-4 bg-card rounded-lg shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="search-product" className="block text-sm font-medium text-foreground mb-1">Search by Name, ID, or Institution</label>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-1">
+            <label htmlFor="search-product" className="block text-sm font-medium text-foreground mb-1">Search</label>
             <div className="relative">
               <Input 
                 type="text" 
                 id="search-product" 
-                placeholder="Enter search term..." 
+                placeholder="Name, ID, Institution..." 
                 className="pl-10" 
                 value={searchTerm}
                 onChange={handleSearchChange}
@@ -103,7 +124,21 @@ export default function AdminProductsPage() {
             </div>
           </div>
           <div>
-            <label htmlFor="institution-filter" className="block text-sm font-medium text-foreground mb-1">Filter by School/College</label>
+            <label htmlFor="category-filter" className="block text-sm font-medium text-foreground mb-1">Filter by Category</label>
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+              <SelectTrigger id="category-filter">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {allCategories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="institution-filter" className="block text-sm font-medium text-foreground mb-1">Filter by Institution</label>
             <Select value={selectedInstitution} onValueChange={handleInstitutionChange}>
               <SelectTrigger id="institution-filter">
                 <SelectValue placeholder="All Institutions" />

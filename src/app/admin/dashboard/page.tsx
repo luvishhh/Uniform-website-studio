@@ -7,13 +7,14 @@ import Link from "next/link";
 
 // Dummy data for dashboard
 const inventoryCounts = {
-  schoolAndCollege: mockProducts.filter(p => p.category === "School & College").reduce((sum, p) => sum + p.stock, 0),
+  schoolStock: mockProducts.filter(p => p.category === "School").reduce((sum, p) => sum + p.stock, 0),
+  collegeStock: mockProducts.filter(p => p.category === "College").reduce((sum, p) => sum + p.stock, 0),
   totalStock: mockProducts.reduce((sum, p) => sum + p.stock, 0),
 };
 
 const totalRevenue = mockOrders.filter(o => o.status === 'Delivered').reduce((sum, o) => sum + o.totalAmount, 0);
 const totalOrders = mockOrders.length;
-const totalRegisteredUsers = mockUsers.length; // Counting all user types
+const totalRegisteredUsers = mockUsers.length;
 
 const stats = [
   { title: "Total Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: DollarSign, trend: "+2.5%", trendType: "up" as "up" | "down" },
@@ -22,8 +23,9 @@ const stats = [
   { title: "Total Stock", value: inventoryCounts.totalStock.toString(), icon: Package, trend: "-50", trendType: "down" as "up" | "down" },
 ];
 
-const categoryStock = [
-    { name: "School & College Uniforms", count: inventoryCounts.schoolAndCollege },
+const categoryStockSummary = [
+    { name: "School Uniforms Stock", count: inventoryCounts.schoolStock },
+    { name: "College Uniforms Stock", count: inventoryCounts.collegeStock },
 ]
 
 export default function AdminDashboardPage() {
@@ -53,10 +55,10 @@ export default function AdminDashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Inventory Summary</CardTitle>
-            <CardDescription>Current stock levels for {mockCategories[0]?.name || 'products'}.</CardDescription>
+            <CardDescription>Current stock levels for School and College uniforms.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-1"> {/* Adjusted for single category */}
-              {categoryStock.map(cat => (
+          <CardContent className="grid gap-6 sm:grid-cols-2"> 
+              {categoryStockSummary.map(cat => (
                    <Card key={cat.name} className="p-4">
                       <CardTitle className="text-lg font-medium">{cat.name}</CardTitle>
                       <CardDescription className="text-3xl font-bold text-primary mt-1">{cat.count}</CardDescription>
@@ -126,4 +128,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
