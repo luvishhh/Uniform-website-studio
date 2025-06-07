@@ -6,13 +6,21 @@ import ProductCard from "@/components/ProductCard";
 import { mockProducts, mockCategories } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox"; // Keep for potential direct use, though DropdownMenuCheckboxItem is primary
 import { Label } from "@/components/ui/label";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 // Helper to get unique values for filters
 const getUniqueValues = (products: typeof mockProducts, key: keyof typeof mockProducts[0]) => {
@@ -34,7 +42,6 @@ export default function ProductsPage() {
   const [selectedGenders, setSelectedGenders] = useState<string[]>(searchParams.getAll('gender') || []);
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || "name_asc");
   
-  // Derive available filter options from all products initially
   const allInstitutions = useMemo(() => getUniqueValues(mockProducts, 'institution'), []);
   const allSizes = useMemo(() => getUniqueValues(mockProducts, 'sizes'), []);
   const allGenders: ('Unisex' | 'Boys' | 'Girls')[] = ['Unisex', 'Boys', 'Girls'];
@@ -48,14 +55,13 @@ export default function ProductsPage() {
     selectedGenders.forEach(gender => params.append('gender', gender));
     if (sortBy) params.set('sort', sortBy);
     
-    // Use router.replace to update URL without adding to history stack for filters
     router.replace(`/products?${params.toString()}`, { scroll: false });
 
   }, [searchTerm, selectedInstitutions, selectedSizes, selectedGenders, sortBy, router]);
 
 
   const filteredProducts = useMemo(() => {
-    let products = [...mockProducts]; // Filter for "School & College" category
+    let products = [...mockProducts]; 
 
     if (searchTerm) {
       products = products.filter(p =>
@@ -87,10 +93,10 @@ export default function ProductsPage() {
     return products;
   }, [searchTerm, selectedInstitutions, selectedSizes, selectedGenders, sortBy]);
   
-  const handleCheckboxChange = (
+  const handleFilterChange = (
     value: string, 
-    setter: React.Dispatch<React.SetStateAction<string[]>>, 
-    currentValues: string[]
+    currentValues: string[], 
+    setter: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     const newValues = currentValues.includes(value)
       ? currentValues.filter(v => v !== value)
@@ -104,11 +110,18 @@ export default function ProductsPage() {
     setSelectedSizes([]);
     setSelectedGenders([]);
     setSortBy("name_asc");
-    router.replace('/products', { scroll: false });
+    // router.replace('/products', { scroll: false }); // useEffect will handle this
   };
 
   const categoryName = mockCategories[0]?.name || "All Products";
 
+  const getSortByLabel = () => {
+    if (sortBy === 'price_asc') return 'Price: Low to High';
+    if (sortBy === 'price_desc') return 'Price: High to Low';
+    if (sortBy === 'name_asc') return 'Name: A-Z';
+    if (sortBy === 'name_desc') return 'Name: Z-A';
+    return 'Sort By';
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -119,122 +132,138 @@ export default function ProductsPage() {
           <p className="text-muted-foreground mt-2">Browse our collection of high-quality uniforms.</p>
         </div>
 
-        <div className="grid md:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
-          <aside className="md:col-span-1 space-y-6 p-6 bg-card rounded-lg shadow h-fit sticky top-24">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold font-headline">Filters</h3>
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
-                <X className="mr-1 h-3 w-3" /> Clear All
-              </Button>
-            </div>
-            
-            <div>
-              <Label className="text-base font-medium">School/College</Label>
-              <div className="space-y-2 mt-2 max-h-40 overflow-y-auto pr-2">
-                {allInstitutions.map(inst => (
-                  <div key={inst} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`inst-${inst}`} 
-                      checked={selectedInstitutions.includes(inst)}
-                      onCheckedChange={() => handleCheckboxChange(inst, setSelectedInstitutions, selectedInstitutions)}
-                    />
-                    <Label htmlFor={`inst-${inst}`} className="text-sm font-normal cursor-pointer">{inst}</Label>
-                  </div>
-                ))}
+        {/* Horizontal Filter Bar */}
+        <div className="mb-6 p-4 bg-card rounded-lg shadow-md sticky top-[70px] md:top-[70px] z-30"> {/* Adjusted sticky top value */}
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="w-full md:flex-grow">
+              <Label htmlFor="search-products" className="sr-only">Search Products</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                  type="text" 
+                  id="search-products" 
+                  placeholder="Name, description, institution..." 
+                  className="pl-10" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
-
-            <div>
-              <Label className="text-base font-medium">Gender</Label>
-              <div className="space-y-2 mt-2">
-                {allGenders.map(gender => (
-                  <div key={gender} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`gender-${gender}`}
-                      checked={selectedGenders.includes(gender)}
-                      onCheckedChange={() => handleCheckboxChange(gender, setSelectedGenders, selectedGenders)}
-                    />
-                    <Label htmlFor={`gender-${gender}`} className="text-sm font-normal cursor-pointer">{gender}</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-base font-medium">Sizes</Label>
-              <div className="space-y-2 mt-2 max-h-40 overflow-y-auto pr-2">
-                {(allSizes as string[]).map(size => (
-                  <div key={size} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`size-${size}`} 
-                      checked={selectedSizes.includes(size)}
-                      onCheckedChange={() => handleCheckboxChange(size, setSelectedSizes, selectedSizes)}
-                    />
-                    <Label htmlFor={`size-${size}`} className="text-sm font-normal cursor-pointer">{size}</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* Price filter could be a range slider or min/max inputs - simplified for now */}
-          </aside>
-
-          {/* Products Grid and Sort/Search */}
-          <div className="md:col-span-3">
-            <div className="mb-6 p-4 bg-card rounded-lg shadow sticky top-0 z-10">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                <div>
-                  <Label htmlFor="search" className="block text-sm font-medium text-foreground mb-1">Search Products</Label>
-                  <div className="relative">
-                    <Input 
-                      type="text" 
-                      id="search" 
-                      placeholder="Name, description, institution..." 
-                      className="pl-10" 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="sort" className="block text-sm font-medium text-foreground mb-1">Sort By</Label>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger id="sort">
-                      <SelectValue placeholder="Select sorting" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="name_asc">Name (A-Z)</SelectItem>
-                      <SelectItem value="name_desc">Name (Z-A)</SelectItem>
-                      <SelectItem value="price_asc">Price (Low to High)</SelectItem>
-                      <SelectItem value="price_desc">Price (High to Low)</SelectItem>
-                      {/* Add featured or newness sort if needed */}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Filter className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h2 className="text-2xl font-semibold mb-2">No Products Found</h2>
-                <p className="text-muted-foreground">Try adjusting your search or filters, or check back later!</p>
-                <Button variant="link" onClick={clearFilters} className="mt-4">
-                  Clear Filters
+          </div>
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Institution Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between min-w-[160px]">
+                  Institutions {selectedInstitutions.length > 0 ? `(${selectedInstitutions.length})` : ''}
+                  <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
-              </div>
-            )}
-            {/* Pagination would go here for a real app */}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto">
+                <DropdownMenuLabel>Filter by School/College</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {allInstitutions.map(inst => (
+                  <DropdownMenuCheckboxItem
+                    key={inst}
+                    checked={selectedInstitutions.includes(inst)}
+                    onCheckedChange={() => handleFilterChange(inst, selectedInstitutions, setSelectedInstitutions)}
+                  >
+                    {inst}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Gender Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between min-w-[120px]">
+                  Gender {selectedGenders.length > 0 ? `(${selectedGenders.length})` : ''}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuLabel>Filter by Gender</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {allGenders.map(gender => (
+                  <DropdownMenuCheckboxItem
+                    key={gender}
+                    checked={selectedGenders.includes(gender)}
+                    onCheckedChange={() => handleFilterChange(gender, selectedGenders, setSelectedGenders)}
+                  >
+                    {gender}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Sizes Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between min-w-[100px]">
+                  Size {selectedSizes.length > 0 ? `(${selectedSizes.length})` : ''}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto">
+                <DropdownMenuLabel>Filter by Size</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(allSizes as string[]).map(size => (
+                  <DropdownMenuCheckboxItem
+                    key={size}
+                    checked={selectedSizes.includes(size)}
+                    onCheckedChange={() => handleFilterChange(size, selectedSizes, setSelectedSizes)}
+                  >
+                    {size}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Sort By Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between min-w-[180px]">
+                  {getSortByLabel()}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setSortBy("name_asc")}>Name (A-Z)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setSortBy("name_desc")}>Name (Z-A)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setSortBy("price_asc")}>Price (Low to High)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setSortBy("price_desc")}>Price (High to Low)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="ghost" onClick={clearFilters} className="text-sm ml-auto md:ml-0">
+              <X className="mr-1 h-3 w-3" /> Clear All
+            </Button>
           </div>
         </div>
+
+        {/* Products Grid */}
+        <div className="mt-8">
+          {filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <Filter className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h2 className="text-xl font-semibold mb-2">No Products Found</h2>
+              <p className="text-muted-foreground">Try adjusting your search or filters, or check back later!</p>
+              <Button variant="link" onClick={clearFilters} className="mt-4">
+                Clear Filters
+              </Button>
+            </div>
+          )}
+        </div>
+        {/* Pagination would go here for a real app */}
       </main>
       <Footer />
     </div>
