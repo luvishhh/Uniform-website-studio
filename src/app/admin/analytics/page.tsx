@@ -15,19 +15,31 @@ const salesData = [
   { name: 'Jun', sales: 2390, revenue: 3800 },
 ];
 
-const schoolCollegeCategory = mockCategories.find(cat => cat.slug === 'school-college');
+// Calculate stock distribution by institution
+const schoolCollegeCategoryName = mockCategories.find(cat => cat.slug === 'school-college')?.name;
 let categoryDistributionData: { name: string, value: number }[] = [];
 
-if (schoolCollegeCategory) {
-  const schoolCollegeStock = mockProducts
-    .filter(p => p.category === schoolCollegeCategory.name)
-    .reduce((acc, p) => acc + p.stock, 0);
-  categoryDistributionData = [{ name: schoolCollegeCategory.name, value: schoolCollegeStock }];
+if (schoolCollegeCategoryName) {
+  const productsInSchoolCollege = mockProducts.filter(p => p.category === schoolCollegeCategoryName && p.institution);
+  
+  const stockByInstitution: Record<string, number> = productsInSchoolCollege.reduce((acc, product) => {
+    if (product.institution) {
+      acc[product.institution] = (acc[product.institution] || 0) + product.stock;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
+  categoryDistributionData = Object.entries(stockByInstitution).map(([institutionName, stockValue]) => ({
+    name: institutionName,
+    value: stockValue,
+  })).sort((a,b) => b.value - a.value); // Sort by stock, descending
+
 } else {
   console.warn("School & College category not found in mockData. Pie chart for stock distribution may be empty.");
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28']; // Colors for Pie chart
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF']; // Colors for Pie chart, added more
 
 
 export default function AdminAnalyticsPage() {
@@ -107,8 +119,8 @@ export default function AdminAnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Product Stock Distribution</CardTitle>
-            <CardDescription>Overall stock for the main category.</CardDescription>
+            <CardTitle>Product Stock Distribution by Institution</CardTitle>
+            <CardDescription>Stock levels for School & College uniforms, broken down by institution.</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px] flex items-center justify-center">
             {categoryDistributionData.length > 0 ? (
@@ -122,7 +134,7 @@ export default function AdminAnalyticsPage() {
                             outerRadius={120}
                             fill="#8884d8"
                             dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            label={({ name, percent, value }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
                             
                         >
                             {categoryDistributionData.map((entry, index) => (
@@ -134,12 +146,13 @@ export default function AdminAnalyticsPage() {
                                 backgroundColor: "hsl(var(--background))",
                                 borderColor: "hsl(var(--border))",
                             }}
+                            formatter={(value, name) => [`${value} units`, name]}
                         />
-                        <Legend wrapperStyle={{fontSize: "12px"}} />
+                        <Legend wrapperStyle={{fontSize: "12px"}} layout="vertical" align="right" verticalAlign="middle" />
                     </PieChart>
                 </ResponsiveContainer>
             ) : (
-                <p className="text-muted-foreground">No stock data to display for the 'School & College' category or category not found.</p>
+                <p className="text-muted-foreground text-center">No stock data to display by institution for the 'School & College' category or category not found.</p>
             )}
           </CardContent>
         </Card>
@@ -147,3 +160,4 @@ export default function AdminAnalyticsPage() {
     </div>
   );
 }
+
