@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/shared/Logo";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     // If already "logged in", redirect to dashboard
@@ -30,7 +32,6 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     // Mock authentication
-    // In a real app, this would be an API call to your backend
     if (email === "Lavishkhare@gmail.com" && password === "lavish@123") {
       if (typeof window !== "undefined") {
         localStorage.setItem("isAdminLoggedIn", "true");
@@ -39,7 +40,7 @@ export default function AdminLoginPage() {
         title: "Login Successful",
         description: "Redirecting to admin dashboard...",
       });
-      router.push("/admin/dashboard"); // Use push to allow back navigation during dev if needed, replace for production
+      router.push("/admin/dashboard");
     } else {
       toast({
         title: "Login Failed",
@@ -48,6 +49,10 @@ export default function AdminLoginPage() {
       });
       setIsLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -75,17 +80,29 @@ export default function AdminLoginPage() {
                 disabled={isLoading}
               />
             </div>
-            <div>
+            <div className="relative">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                className="pr-10" 
               />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 h-7 w-7 mt-3 text-muted-foreground hover:text-foreground"
+                onClick={togglePasswordVisibility}
+                disabled={isLoading}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Login"}
@@ -101,6 +118,3 @@ export default function AdminLoginPage() {
     </div>
   );
 }
-
-// Need to import Link for the back to home link
-import Link from "next/link";
