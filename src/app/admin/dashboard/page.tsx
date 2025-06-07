@@ -1,7 +1,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockProducts, mockOrders, mockUsers } from "@/lib/mockData";
-import { DollarSign, Package, Users, ShoppingCart, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { mockProducts, mockOrders, mockUsers, mockCategories } from "@/lib/mockData";
+import { DollarSign, Package, Users, ShoppingCart, ArrowUpRight, ArrowDownRight, PlusCircle, Settings, ListOrdered } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 // Dummy data for dashboard
 const inventoryCounts = {
@@ -47,21 +49,52 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory Summary</CardTitle>
-          <CardDescription>Current stock levels for {mockCategories[0]?.name || 'products'}.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2"> {/* Adjusted for single category */}
-            {categoryStock.map(cat => (
-                 <Card key={cat.name} className="p-4">
-                    <CardTitle className="text-lg font-medium">{cat.name}</CardTitle>
-                    <CardDescription className="text-3xl font-bold text-primary mt-1">{cat.count}</CardDescription>
-                    <p className="text-xs text-muted-foreground mt-1">items in stock</p>
-                 </Card>
-            ))}
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Inventory Summary</CardTitle>
+            <CardDescription>Current stock levels for {mockCategories[0]?.name || 'products'}.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 sm:grid-cols-1"> {/* Adjusted for single category */}
+              {categoryStock.map(cat => (
+                   <Card key={cat.name} className="p-4">
+                      <CardTitle className="text-lg font-medium">{cat.name}</CardTitle>
+                      <CardDescription className="text-3xl font-bold text-primary mt-1">{cat.count}</CardDescription>
+                      <p className="text-xs text-muted-foreground mt-1">items in stock</p>
+                   </Card>
+              ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Common admin tasks.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full justify-start">
+              <Link href="/admin/products/new">
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="w-full justify-start">
+              <Link href="/admin/orders">
+                <ListOrdered className="mr-2 h-4 w-4" /> View All Orders
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="w-full justify-start">
+              <Link href="/admin/customers">
+                <Users className="mr-2 h-4 w-4" /> Manage Users
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="w-full justify-start">
+              <Link href="/admin/settings">
+                <Settings className="mr-2 h-4 w-4" /> Go to Settings
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
@@ -93,3 +126,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
