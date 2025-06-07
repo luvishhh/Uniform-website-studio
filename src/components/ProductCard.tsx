@@ -84,9 +84,10 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
             >
               <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
             </Button>
-            <Button variant="outline" className="flex-1 sm:flex-none" asChild>
+            <Button variant="outline" className="flex-1" asChild>
               <Link href={`/products/${product.id}`} aria-label={`View details for ${product.name}`}>
-                <Eye className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">View</span>
+                <Eye className="mr-2 h-4 w-4" />
+                <span className="inline">View</span>
               </Link>
             </Button>
           </div>
@@ -95,4 +96,3 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
     </Card>
   );
 }
-
