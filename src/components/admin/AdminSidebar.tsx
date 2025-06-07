@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -52,7 +53,7 @@ export default function AdminSidebar() {
       </ScrollArea>
       <div className="p-4 border-t border-sidebar-border mt-auto">
          <Link href="/" passHref>
-            <Button variant="outline" className="w-full justify-start text-sm h-10 px-3 border-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <Button className="w-full justify-start text-sm h-10 px-3 bg-accent text-accent-foreground hover:bg-card hover:text-primary border border-sidebar-border">
                 <LogOut className="mr-2 h-4 w-4" />
                 Exit Admin (Go Home)
             </Button>
