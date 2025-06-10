@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { User, StudentUser, Order, InstitutionUser, DealerUser, AdminUser } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // TabsList & TabsTrigger no longer used directly in visible JSX
 import { Package, UserCircle, Settings, LogOut, Edit3, UploadCloud, X } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState, useCallback } from "react";
@@ -27,16 +27,16 @@ export default function ProfilePage() {
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("details"); 
   const [newAvatarUrl, setNewAvatarUrl] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   const fetchProfileData = useCallback(async () => {
     setIsLoading(true);
-    const storedUserId = localStorage.getItem('unishop_user_id');
+    const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
 
     if (storedUserId) {
       try {
-        // Fetch user details
         const userRes = await fetch(`/api/user/${storedUserId}`);
         if (!userRes.ok) {
           const errorData = await userRes.json();
@@ -47,16 +47,13 @@ export default function ProfilePage() {
         setAvatarUrl(userData.imageUrl || `https://placehold.co/100x100.png?text=${getInitials(getUserDisplayName(userData))}`);
         setNewAvatarUrl(userData.imageUrl || "");
 
-
-        // Fetch user orders
         const ordersRes = await fetch(`/api/orders/user/${storedUserId}`);
         if (!ordersRes.ok) {
-          // It's okay if orders are not found (404), just means user has no orders
           if (ordersRes.status !== 404) {
             const errorData = await ordersRes.json();
             throw new Error(errorData.message || 'Failed to fetch orders');
           }
-          setUserOrders([]); // Set to empty array if 404 or other error
+          setUserOrders([]);
         } else {
           const ordersData: Order[] = await ordersRes.json();
           setUserOrders(ordersData);
@@ -65,8 +62,6 @@ export default function ProfilePage() {
       } catch (error: any) {
         console.error("Error fetching profile data:", error);
         toast({ title: "Error Loading Profile", description: error.message || "Could not load your profile data. Please try logging in again.", variant: "destructive" });
-        // Optional: redirect to login if auth seems to be the issue
-        // router.push('/login'); 
       }
     } else {
       toast({ title: "Not Logged In", description: "Please login to view your profile.", variant: "destructive" });
@@ -101,16 +96,13 @@ export default function ProfilePage() {
     return user.email || (user as StudentUser).rollNumber || "";
   }
 
-
   const handleAvatarUpdate = () => {
     if (newAvatarUrl.trim()) {
       setAvatarUrl(newAvatarUrl.trim());
-      // In a real app, you'd call an API to update the user's profile
-      toast({ title: "Avatar Updated (Mock)", description: "Your profile picture has been updated locally." });
-      // Also update currentUser state if it's used for displaying the image elsewhere immediately
       if(currentUser) {
         setCurrentUser({...currentUser, imageUrl: newAvatarUrl.trim() });
       }
+      toast({ title: "Avatar Updated (Mock)", description: "Your profile picture has been updated locally." });
     }
     setIsAvatarDialogOpen(false);
   };
@@ -125,11 +117,13 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem('unishop_user_role');
-      localStorage.removeItem('unishop_user_displayName');
-      localStorage.removeItem('unishop_user_id');
-      localStorage.removeItem('isAdminLoggedIn');
-      window.dispatchEvent(new CustomEvent('authChange'));
+      if (typeof window !== "undefined") {
+        localStorage.removeItem('unishop_user_role');
+        localStorage.removeItem('unishop_user_displayName');
+        localStorage.removeItem('unishop_user_id');
+        localStorage.removeItem('isAdminLoggedIn');
+        window.dispatchEvent(new CustomEvent('authChange'));
+      }
       setCurrentUser(null);
       setUserOrders([]);
       router.push('/');
@@ -168,18 +162,7 @@ export default function ProfilePage() {
   const displayName = getUserDisplayName(currentUser);
   const displayIdentifier = getUserIdentifier(currentUser);
 
-  const getOrderStatusProgress = (status: Order['status']): number => {
-    switch (status) {
-      case 'Placed': return 25;
-      case 'Confirmed': return 50;
-      case 'Shipped': return 75;
-      case 'Delivered': return 100;
-      case 'Cancelled': return 0; // Or handle differently
-      default: return 0;
-    }
-  };
   const orderStatuses: Order['status'][] = ['Placed', 'Confirmed', 'Shipped', 'Delivered'];
-
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -209,18 +192,32 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="p-3">
               <Separator className="mb-3" />
-              <TabsList className="flex flex-col h-auto bg-transparent p-0 w-full">
-                 {/* These are illustrative; actual tab switching is handled by Tabs component below */}
-                <TabsTrigger value="details" className="w-full justify-start py-2.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-semibold">
+              <div className="flex flex-col space-y-1 w-full">
+                <Button
+                  variant={activeTab === "details" ? "secondary" : "ghost"}
+                  onClick={() => setActiveTab("details")}
+                  className="w-full justify-start py-2.5 font-normal data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold"
+                  data-active={activeTab === "details"}
+                >
                   <UserCircle className="mr-2 h-4 w-4"/> Personal Details
-                </TabsTrigger>
-                <TabsTrigger value="orders" className="w-full justify-start py-2.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-semibold">
+                </Button>
+                <Button
+                  variant={activeTab === "orders" ? "secondary" : "ghost"}
+                  onClick={() => setActiveTab("orders")}
+                  className="w-full justify-start py-2.5 font-normal data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold"
+                  data-active={activeTab === "orders"}
+                >
                   <Package className="mr-2 h-4 w-4"/> Order History
-                </TabsTrigger>
-                <TabsTrigger value="settings" className="w-full justify-start py-2.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-semibold">
+                </Button>
+                <Button
+                  variant={activeTab === "settings" ? "secondary" : "ghost"}
+                  onClick={() => setActiveTab("settings")}
+                  className="w-full justify-start py-2.5 font-normal data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold"
+                  data-active={activeTab === "settings"}
+                >
                   <Settings className="mr-2 h-4 w-4"/> Account Settings
-                </TabsTrigger>
-              </TabsList>
+                </Button>
+              </div>
               <Separator className="my-3" />
               <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive/90 hover:bg-destructive/10 py-2.5" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4"/> Logout
@@ -229,14 +226,8 @@ export default function ProfilePage() {
           </Card>
 
           <div className="flex-1">
-            <Tabs defaultValue="details" className="w-full">
-              {/* Hidden TabsList, navigation is handled by sidebar buttons */}
-               <TabsList className="hidden"> 
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="orders">Orders</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-              </TabsList>
-              
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              {/* Removed the hidden TabsList as it might be causing issues */}
               <TabsContent value="details">
                 <Card className="shadow-lg">
                   <CardHeader>
@@ -322,7 +313,6 @@ export default function ProfilePage() {
                         </div>
                         <p className="text-sm font-semibold text-right">Total: ${order.totalAmount.toFixed(2)}</p>
                         
-                        {/* Order Tracker Progress Bar - show for the first order for demo, or conditional */}
                         {orderIdx === 0 && order.status !== 'Cancelled' && (
                             <div className="mt-4 pt-4 border-t">
                                 <h5 className="text-sm font-medium mb-3 text-center">Order Progress</h5>
