@@ -18,6 +18,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF', '#FF4040', '#40FF4F'];
 
@@ -43,8 +45,9 @@ export default function InstitutionDashboardPage() {
   const [mostPopularProduct, setMostPopularProduct] = useState<{ name: string; quantity: number }>({ name: "N/A", quantity: 0 });
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-    const to = endOfMonth(new Date());
-    const from = startOfMonth(subMonths(to, 5)); // Default to last 6 months
+    // Fixed date range to ensure mock data is visible
+    const from = new Date(2023, 6, 1); // July 1, 2023
+    const to = new Date(2023, 11, 31); // December 31, 2023
     return { from, to };
   });
 
@@ -162,12 +165,12 @@ export default function InstitutionDashboardPage() {
     if (!currentUser || !institutionProducts.length) return [];
     const institutionNameLower = currentUser.institutionName.toLowerCase();
     
-    const monthlySales: Record<string, { sales: number, revenue: number }> = {};
+    const monthlySales: Record<string, { sales: number, revenue: number, date: Date }> = {};
 
     mockOrders.forEach(order => {
       const orderDate = parseISO(order.orderDate);
       if (dateRange?.from && dateRange?.to && !isWithinInterval(orderDate, { start: dateRange.from, end: dateRange.to })) {
-        return; // Skip if order date is outside selected range
+        return; 
       }
 
       order.items.forEach(item => {
@@ -175,7 +178,7 @@ export default function InstitutionDashboardPage() {
         if (productDetails && productDetails.institution && productDetails.institution.toLowerCase() === institutionNameLower) {
           const monthKey = format(orderDate, 'MMM yy');
           if (!monthlySales[monthKey]) {
-            monthlySales[monthKey] = { sales: 0, revenue: 0 };
+            monthlySales[monthKey] = { sales: 0, revenue: 0, date: startOfMonth(orderDate) };
           }
           monthlySales[monthKey].sales += item.quantity;
           monthlySales[monthKey].revenue += item.price * item.quantity;
@@ -185,11 +188,8 @@ export default function InstitutionDashboardPage() {
     
     return Object.entries(monthlySales)
       .map(([name, data]) => ({ name, ...data }))
-      .sort((a,b) => parseISO(`01 ${a.name.split(' ')[0]} 20${a.name.split(' ')[1]}`).getTime() - parseISO(`01 ${b.name.split(' ')[0]} 20${b.name.split(' ')[1]}`).getTime() );
-      // A more robust sort would convert 'MMM yy' back to a date object for sorting.
-      // For now, this might be okay if data is sparse or chronological in mockOrders.
-      // Example: .sort((a,b) => new Date('01 ' + a.name) - new Date('01 ' + b.name)); Needs adapter for 'yy'
-  }, [currentUser, institutionProducts, mockOrders, dateRange]);
+      .sort((a,b) => a.date.getTime() - b.date.getTime() );
+  }, [currentUser, institutionProducts, dateRange]); // Removed mockOrders from dependencies as it's constant
 
   const productSalesDistribution = useMemo(() => {
     if (!currentUser || !institutionProducts.length) return [];
@@ -212,7 +212,7 @@ export default function InstitutionDashboardPage() {
         });
     });
     return Object.values(salesByProduct).sort((a,b) => b.value - a.value);
-  }, [currentUser, institutionProducts, mockOrders, dateRange]);
+  }, [currentUser, institutionProducts, dateRange]); // Removed mockOrders
 
 
   if (isLoading) {
@@ -483,7 +483,7 @@ export default function InstitutionDashboardPage() {
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-muted-foreground text-center py-8">No students from {currentUser?.institutionName} have purchased uniforms yet.</p>
+              <p className="text-muted-foreground text-center py-8">No students from {currentUser?.institutionName} have purchased uniforms yet for the selected period.</p>
             )}
           </CardContent>
         </Card>
@@ -563,3 +563,6 @@ export default function InstitutionDashboardPage() {
     </div>
   );
 }
+
+
+      
