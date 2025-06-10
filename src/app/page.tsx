@@ -87,8 +87,8 @@ export default function HomePage() {
 
           {/* Static Text Overlay */}
           <div className="absolute inset-0 flex flex-col justify-center items-center p-8 md:p-16 text-center text-white z-10 pointer-events-none">
-            <div className="max-w-lg md:max-w-xl lg:max-w-2xl bg-black/60 backdrop-blur-lg p-8 md:p-10 rounded-xl shadow-2xl pointer-events-auto border border-white/10">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline mb-6 leading-tight">
+            <div className="max-w-xl md:max-w-2xl lg:max-w-3xl bg-black/60 backdrop-blur-lg p-8 md:p-10 rounded-xl shadow-2xl pointer-events-auto border border-white/10">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline mb-6 leading-tight md:leading-snug">
                 Dress for Success. Discover UniShop.
               </h1>
               <p className="text-lg md:text-xl lg:text-2xl mb-8 opacity-95">
@@ -199,4 +199,3 @@ export default function HomePage() {
 
 // Helper cn function if not globally available
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
-
