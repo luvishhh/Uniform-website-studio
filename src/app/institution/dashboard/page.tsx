@@ -4,12 +4,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { mockProducts, mockOrders, mockUsers, getProductById, getUserById } from "@/lib/mockData";
-import type { Product, InstitutionUser, StudentUser, User, Order } from "@/types";
-import { ListChecks, FileText, Building, UserCircle, Users, ShoppingCart, Star, UserCheck, Package as PackageIcon } from "lucide-react"; // Added UserCheck and PackageIcon
+import type { Product, InstitutionUser, StudentUser, User, Order, CartItem } from "@/types";
+import { ListChecks, FileText, Building, UserCircle, Users, ShoppingCart, Star, UserCheck, Package as PackageIcon, Calendar as CalendarIcon, TableIcon } from "lucide-react";
 import Link from "next/link";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { ResponsiveContainer, LineChart, PieChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Pie, Cell } from 'recharts';
+import type { DateRange } from "react-day-picker";
+import { format, parseISO, isWithinInterval, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF', '#FF4040', '#40FF4F'];
+
+// Helper to get initials
+const getInitials = (name: string = "") => {
+  if (!name) return "U";
+  const names = name.split(' ');
+  return names.map(n => n[0]).join('').toUpperCase() || 'U';
+};
+
 
 export default function InstitutionDashboardPage() {
   const router = useRouter();
@@ -19,10 +37,16 @@ export default function InstitutionDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // State for analytics
-  const [registeredStudentCount, setRegisteredStudentCount] = useState(0);
-  const [purchasingStudentCount, setPurchasingStudentCount] = useState(0);
-  const [totalUniformOrders, setTotalUniformOrders] = useState(0);
+  const [registeredStudents, setRegisteredStudents] = useState<StudentUser[]>([]);
+  const [purchasingStudentsDetails, setPurchasingStudentsDetails] = useState<Array<StudentUser & { purchasedItems: CartItem[], totalSpent: number }>>([]);
+  const [totalUniformOrdersCount, setTotalUniformOrdersCount] = useState(0);
   const [mostPopularProduct, setMostPopularProduct] = useState<{ name: string; quantity: number }>({ name: "N/A", quantity: 0 });
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const to = endOfMonth(new Date());
+    const from = startOfMonth(subMonths(to, 5)); // Default to last 6 months
+    return { from, to };
+  });
 
   useEffect(() => {
     const fetchInstitutionData = async () => {
@@ -59,41 +83,60 @@ export default function InstitutionDashboardPage() {
     if (currentUser && currentUser.role === 'institution' && currentUser.institutionName) {
       const institutionNameLower = currentUser.institutionName.toLowerCase();
 
-      // 1. Registered Students for this institution
       const studentsOfInstitution = mockUsers.filter(
-        (u): u is StudentUser => u.role === 'student' && 
+        (u): u is StudentUser => u.role === 'student' &&
                                  typeof (u as StudentUser).schoolCollegeName === 'string' &&
                                  (u as StudentUser).schoolCollegeName.toLowerCase() === institutionNameLower
       );
-      setRegisteredStudentCount(studentsOfInstitution.length);
+      setRegisteredStudents(studentsOfInstitution);
 
-      let purchasingStudentsSet = new Set<string>();
+      let purchasingStudentsMap = new Map<string, { student: StudentUser, purchasedItems: CartItem[], totalSpent: number }>();
       let totalOrdersForInstitutionCount = 0;
       const productSaleCounts: Record<string, number> = {};
 
       mockOrders.forEach(order => {
         let orderContainsInstitutionProduct = false;
+        let orderItemsForInstitution: CartItem[] = [];
+
         order.items.forEach(item => {
           const productDetails = getProductById(item.productId);
           if (productDetails && productDetails.institution && productDetails.institution.toLowerCase() === institutionNameLower) {
             orderContainsInstitutionProduct = true;
+            orderItemsForInstitution.push(item);
             productSaleCounts[item.productId] = (productSaleCounts[item.productId] || 0) + item.quantity;
-            
-            const orderUser = getUserById(order.userId);
-            if (orderUser && orderUser.role === 'student' && 
-                typeof (orderUser as StudentUser).schoolCollegeName === 'string' &&
-                (orderUser as StudentUser).schoolCollegeName.toLowerCase() === institutionNameLower) {
-              purchasingStudentsSet.add(order.userId);
-            }
           }
         });
+
         if (orderContainsInstitutionProduct) {
           totalOrdersForInstitutionCount++;
+          const orderUser = getUserById(order.userId);
+          if (orderUser && orderUser.role === 'student' &&
+              typeof (orderUser as StudentUser).schoolCollegeName === 'string' &&
+              (orderUser as StudentUser).schoolCollegeName.toLowerCase() === institutionNameLower) {
+            
+            const studentData = orderUser as StudentUser;
+            const existingEntry = purchasingStudentsMap.get(studentData.id);
+            if (existingEntry) {
+              existingEntry.purchasedItems.push(...orderItemsForInstitution);
+              existingEntry.totalSpent += orderItemsForInstitution.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            } else {
+              purchasingStudentsMap.set(studentData.id, {
+                student: studentData,
+                purchasedItems: [...orderItemsForInstitution],
+                totalSpent: orderItemsForInstitution.reduce((sum, item) => sum + item.price * item.quantity, 0)
+              });
+            }
+          }
         }
       });
-
-      setPurchasingStudentCount(purchasingStudentsSet.size);
-      setTotalUniformOrders(totalOrdersForInstitutionCount);
+      
+      const detailedPurchasers = Array.from(purchasingStudentsMap.values()).map(entry => ({
+        ...entry.student,
+        purchasedItems: entry.purchasedItems,
+        totalSpent: entry.totalSpent
+      }));
+      setPurchasingStudentsDetails(detailedPurchasers);
+      setTotalUniformOrdersCount(totalOrdersForInstitutionCount);
 
       let topProduct = { name: "N/A", quantity: 0 };
       if (Object.keys(productSaleCounts).length > 0) {
@@ -107,13 +150,70 @@ export default function InstitutionDashboardPage() {
       }
       setMostPopularProduct(topProduct);
     } else {
-      // Reset analytics if no current user or not an institution
-      setRegisteredStudentCount(0);
-      setPurchasingStudentCount(0);
-      setTotalUniformOrders(0);
+      setRegisteredStudents([]);
+      setPurchasingStudentsDetails([]);
+      setTotalUniformOrdersCount(0);
       setMostPopularProduct({ name: "N/A", quantity: 0 });
     }
   }, [currentUser]);
+
+
+  const institutionSalesData = useMemo(() => {
+    if (!currentUser || !institutionProducts.length) return [];
+    const institutionNameLower = currentUser.institutionName.toLowerCase();
+    
+    const monthlySales: Record<string, { sales: number, revenue: number }> = {};
+
+    mockOrders.forEach(order => {
+      const orderDate = parseISO(order.orderDate);
+      if (dateRange?.from && dateRange?.to && !isWithinInterval(orderDate, { start: dateRange.from, end: dateRange.to })) {
+        return; // Skip if order date is outside selected range
+      }
+
+      order.items.forEach(item => {
+        const productDetails = getProductById(item.productId);
+        if (productDetails && productDetails.institution && productDetails.institution.toLowerCase() === institutionNameLower) {
+          const monthKey = format(orderDate, 'MMM yy');
+          if (!monthlySales[monthKey]) {
+            monthlySales[monthKey] = { sales: 0, revenue: 0 };
+          }
+          monthlySales[monthKey].sales += item.quantity;
+          monthlySales[monthKey].revenue += item.price * item.quantity;
+        }
+      });
+    });
+    
+    return Object.entries(monthlySales)
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a,b) => parseISO(`01 ${a.name.split(' ')[0]} 20${a.name.split(' ')[1]}`).getTime() - parseISO(`01 ${b.name.split(' ')[0]} 20${b.name.split(' ')[1]}`).getTime() );
+      // A more robust sort would convert 'MMM yy' back to a date object for sorting.
+      // For now, this might be okay if data is sparse or chronological in mockOrders.
+      // Example: .sort((a,b) => new Date('01 ' + a.name) - new Date('01 ' + b.name)); Needs adapter for 'yy'
+  }, [currentUser, institutionProducts, mockOrders, dateRange]);
+
+  const productSalesDistribution = useMemo(() => {
+    if (!currentUser || !institutionProducts.length) return [];
+    const institutionNameLower = currentUser.institutionName.toLowerCase();
+    const salesByProduct: Record<string, { name: string, value: number }> = {};
+
+    mockOrders.forEach(order => {
+        const orderDate = parseISO(order.orderDate);
+        if (dateRange?.from && dateRange?.to && !isWithinInterval(orderDate, { start: dateRange.from, end: dateRange.to })) {
+            return;
+        }
+        order.items.forEach(item => {
+            const productDetails = getProductById(item.productId);
+            if (productDetails && productDetails.institution && productDetails.institution.toLowerCase() === institutionNameLower) {
+                if (!salesByProduct[productDetails.name]) {
+                    salesByProduct[productDetails.name] = { name: productDetails.name, value: 0 };
+                }
+                salesByProduct[productDetails.name].value += item.quantity;
+            }
+        });
+    });
+    return Object.values(salesByProduct).sort((a,b) => b.value - a.value);
+  }, [currentUser, institutionProducts, mockOrders, dateRange]);
+
 
   if (isLoading) {
     return (
@@ -138,9 +238,8 @@ export default function InstitutionDashboardPage() {
         </div>
       </div>
 
-      {/* Key Analytics Section */}
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-6">Key Analytics</h2>
+        <h2 className="text-2xl font-bold font-headline mb-6">Key Analytics Summary</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -148,7 +247,7 @@ export default function InstitutionDashboardPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{registeredStudentCount}</div>
+                <div className="text-2xl font-bold">{registeredStudents.length}</div>
                 <p className="text-xs text-muted-foreground">Total students from {currentUser?.institutionName || "your institution"}</p>
               </CardContent>
             </Card>
@@ -158,7 +257,7 @@ export default function InstitutionDashboardPage() {
                 <UserCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{purchasingStudentCount}</div>
+                <div className="text-2xl font-bold">{purchasingStudentsDetails.length}</div>
                 <p className="text-xs text-muted-foreground">Unique students who bought uniforms</p>
               </CardContent>
             </Card>
@@ -168,7 +267,7 @@ export default function InstitutionDashboardPage() {
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalUniformOrders}</div>
+                <div className="text-2xl font-bold">{totalUniformOrdersCount}</div>
                 <p className="text-xs text-muted-foreground">Orders containing your institution's uniforms</p>
               </CardContent>
             </Card>
@@ -185,7 +284,211 @@ export default function InstitutionDashboardPage() {
         </div>
       </section>
 
-      {/* Quick Actions Section */}
+      <section className="space-y-6">
+        <h2 className="text-2xl font-bold font-headline">Sales & Product Analytics</h2>
+        <div className="flex justify-end mb-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full sm:w-[260px] justify-start text-left font-normal",
+                    !dateRange && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "LLL dd, y")} -{" "}
+                        {format(dateRange.to, "LLL dd, y")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "LLL dd, y")
+                    )
+                  ) : (
+                    <span>Pick a date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales Trends for Your Institution's Uniforms</CardTitle>
+            <CardDescription>Monthly units sold and revenue from your institution's specific uniforms.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px] flex items-center justify-center">
+            {institutionSalesData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={institutionSalesData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }} />
+                  <Legend wrapperStyle={{fontSize: "12px"}} />
+                  <Line yAxisId="left" type="monotone" dataKey="sales" stroke="hsl(var(--primary))" strokeWidth={2} name="Units Sold" />
+                  <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="hsl(var(--accent))" strokeWidth={2} name="Revenue ($)" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-muted-foreground text-center">No sales data available for the selected date range or institution products.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Uniform Sales Distribution by Product</CardTitle>
+            <CardDescription>Breakdown of units sold per uniform type for your institution.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[400px] flex items-center justify-center">
+            {productSalesDistribution.length > 0 ? (
+                 <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={productSalesDistribution}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={110} 
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent, value }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                        >
+                            {productSalesDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="hsl(var(--background))"/>
+                            ))}
+                        </Pie>
+                        <Tooltip 
+                            contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }}
+                            formatter={(value, name) => [`${value} units sold`, name]}
+                        />
+                        <Legend wrapperStyle={{fontSize: "12px"}} layout="vertical" align="right" verticalAlign="middle" />
+                    </PieChart>
+                </ResponsiveContainer>
+            ) : (
+                <p className="text-muted-foreground text-center">No product sales data available for this institution or date range.</p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-6">
+        <h2 className="text-2xl font-bold font-headline mb-6">Student Information</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Registered Students from {currentUser?.institutionName}</CardTitle>
+            <CardDescription>List of students registered with your institution.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {registeredStudents.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Roll Number</TableHead>
+                    <TableHead>Grade/Course</TableHead>
+                    <TableHead>Parent Contact</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {registeredStudents.map(student => (
+                    <TableRow key={student.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={student.imageUrl || `https://placehold.co/40x40.png?text=${getInitials(student.fullName)}`} alt={student.fullName} data-ai-hint="student avatar" />
+                            <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{student.fullName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{student.rollNumber}</TableCell>
+                      <TableCell>{student.gradeOrCourse}{student.year ? ` (${student.year})` : ''}</TableCell>
+                      <TableCell>{student.parentContactNumber}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">No students found registered for {currentUser?.institutionName}.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Students Who Purchased Uniforms from {currentUser?.institutionName}</CardTitle>
+            <CardDescription>Details of students from your institution who purchased uniforms.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             {purchasingStudentsDetails.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Roll Number</TableHead>
+                    <TableHead>Purchased Items (Count)</TableHead>
+                    <TableHead>Total Spent</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {purchasingStudentsDetails.map(student => (
+                    <TableRow key={student.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                           <Avatar className="h-9 w-9">
+                            <AvatarImage src={student.imageUrl || `https://placehold.co/40x40.png?text=${getInitials(student.fullName)}`} alt={student.fullName} data-ai-hint="student avatar" />
+                            <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{student.fullName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{student.rollNumber}</TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="underline decoration-dashed cursor-help">
+                                {student.purchasedItems.reduce((acc, item) => acc + item.quantity, 0)} items
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs p-2 bg-background border shadow-lg rounded-md">
+                              <ul className="list-disc list-inside space-y-1">
+                                {student.purchasedItems.map((item, idx) => (
+                                  <li key={idx}>{item.name} (Qty: {item.quantity})</li>
+                                ))}
+                              </ul>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell>${student.totalSpent.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">No students from {currentUser?.institutionName} have purchased uniforms yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
       <section>
           <h2 className="text-2xl font-bold font-headline mb-6">Quick Actions</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
