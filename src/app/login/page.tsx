@@ -30,16 +30,15 @@ export default function LoginPage() {
     const emailOrRoll = formData.get(loginRole === "student" ? "rollNumber" : "email") as string;
     const password = formData.get("password") as string;
     
-    // Special handling for the hardcoded admin login if selected
     if (loginRole === "admin" && emailOrRoll === "Lavishkhare@gmail.com" && password === "lavish@123") {
         if (typeof window !== "undefined") {
-            localStorage.setItem("isAdminLoggedIn", "true"); // This is for the separate /admin/login path
+            localStorage.setItem("isAdminLoggedIn", "true"); 
         }
         toast({
             title: "Admin Login Successful (Local)",
             description: "Redirecting to admin dashboard...",
         });
-        router.push("/admin/dashboard"); // Redirect to the dedicated admin dashboard
+        router.push("/admin/dashboard"); 
         setIsLoading(false);
         return;
     }
@@ -59,19 +58,30 @@ export default function LoginPage() {
 
       const result = await response.json();
 
-      if (response.ok) {
+      if (response.ok && result.user) {
         toast({
           title: "Login Successful!",
           description: `Welcome back! Redirecting...`,
         });
-        // The JWT is set as an HttpOnly cookie by the server.
-        // The client might store some non-sensitive user info (like role, name) from `result.user` in context/localStorage
-        // For now, just redirect.
-        if (loginRole === 'admin') { // This admin is a regular admin role, not the hardcoded one.
-            router.push('/admin/dashboard'); // Or a general user admin page if different.
-        } else {
-            router.push('/profile'); // Or to the homepage.
+
+        if (typeof window !== "undefined") {
+          const displayName = result.user.role === 'student' ? result.user.fullName :
+                              result.user.role === 'institution' ? result.user.institutionName :
+                              result.user.role === 'dealer' ? result.user.dealerName :
+                              result.user.email;
+          localStorage.setItem('unishop_user_role', result.user.role);
+          localStorage.setItem('unishop_user_displayName', displayName || 'User');
         }
+        
+        // The JWT is set as an HttpOnly cookie by the server.
+        if (loginRole === 'admin') {
+            router.push('/admin/dashboard'); 
+        } else {
+            router.push('/profile'); 
+        }
+        // Trigger a reload or a state update that Header can pick up if it doesn't automatically.
+        // Forcing a reload is a simple way if complex state management isn't in place.
+        router.refresh(); // This will re-fetch server components and re-run client effects.
       } else {
         toast({
           title: "Login Failed",
