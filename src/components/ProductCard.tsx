@@ -52,7 +52,7 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
         </div>
       </Link>
 
-      <CardContent className="p-4 flex-grow flex flex-col">
+      <CardContent className="px-4 py-3 flex-grow flex flex-col"> {/* Adjusted padding here */}
         <div className="flex-grow mb-2">
           {product.institution && (
             <p className="text-xs text-muted-foreground mb-1 tracking-wide uppercase">
@@ -67,15 +67,14 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
           <p className="text-sm text-muted-foreground capitalize mt-0.5">{product.category} &bull; {product.gender}</p>
         </div>
         
-        <div className="flex items-center justify-between mt-auto">
-          <p className="text-2xl font-bold text-primary">${product.price.toFixed(2)}</p>
+        <div className="flex items-center justify-end mt-auto"> {/* Price removed, adjusted justify to end */}
           {!isAdminView && (
             <Button 
               size="sm"
               variant="default"
               className="bg-primary hover:bg-primary/90 group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300"
               onClick={(e) => {
-                e.stopPropagation(); // Prevent link navigation if card is wrapped by link for other parts
+                e.stopPropagation(); 
                 alert(`Added ${product.name} to cart (mock)`);
               }}
               aria-label={`Add ${product.name} to cart`}
