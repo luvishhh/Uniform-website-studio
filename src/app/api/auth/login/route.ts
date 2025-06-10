@@ -3,7 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import type { User, StudentUser } from '@/types';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { NextResponse }_from 'next/server';
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     
     // Ensure _id is converted to id string
     if (userWithoutPassword._id) {
-        userWithoutPassword.id = userWithoutPassword._id.toString();
+        (userWithoutPassword as any).id = userWithoutPassword._id.toString(); // Ensure id field is populated
         delete userWithoutPassword._id;
     }
 
