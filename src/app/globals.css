@@ -114,3 +114,29 @@ body {
     @apply font-headline; /* Apply headline font to headings */
   }
 }
+
+/* Styles for Logo Marquee */
+.marquee-container {
+  @apply w-full overflow-hidden select-none;
+}
+
+.marquee-track {
+  @apply flex animate-marquee-scroll;
+  /* animation: marquee-scroll 40s linear infinite; */ /* Using Tailwind animation class */
+}
+
+.marquee-item {
+  @apply flex-shrink-0 mx-4 opacity-75 hover:opacity-100 transition-opacity;
+  /* width and height will be set by next/image */
+}
+
+/* Duplicating the animation definition in globals.css to ensure it's available */
+@layer utilities {
+  @keyframes marquee-scroll {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
+  .animate-marquee-scroll {
+    animation: marquee-scroll 40s linear infinite;
+  }
+}

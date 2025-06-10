@@ -18,6 +18,7 @@ import {
   CarouselPrevious,
   CarouselDots,
 } from "@/components/ui/carousel";
+import LogoMarquee from "@/components/shared/LogoMarquee"; // Import the new component
 import React from "react";
 
 const carouselSlides = [
@@ -102,6 +103,16 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
+        </section>
+
+        {/* Logo Marquee Section */}
+        <section className="py-8 md:py-12 bg-background border-y border-border/60">
+          <div className="container mx-auto px-4 md:px-6 text-center mb-6 md:mb-8">
+            <h2 className="text-base font-semibold text-muted-foreground uppercase tracking-wider">
+              Trusted by Leading Schools & Colleges
+            </h2>
+          </div>
+          <LogoMarquee />
         </section>
 
         <section className="py-16 md:py-24 bg-muted/30">
@@ -259,3 +270,4 @@ export default function HomePage() {
 }
 
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
+
