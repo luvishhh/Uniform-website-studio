@@ -30,15 +30,20 @@ export default function LoginPage() {
     const emailOrRoll = formData.get(loginRole === "student" ? "rollNumber" : "email") as string;
     const password = formData.get("password") as string;
     
+    // Specific local check for hardcoded admin credentials if chosen via main login form
     if (loginRole === "admin" && emailOrRoll === "Lavishkhare@gmail.com" && password === "lavish@123") {
         if (typeof window !== "undefined") {
-            localStorage.setItem("isAdminLoggedIn", "true"); 
+            localStorage.setItem("isAdminLoggedIn", "true"); // Legacy admin flag
+            localStorage.setItem('unishop_user_role', 'admin');
+            localStorage.setItem('unishop_user_displayName', 'Admin User');
+            localStorage.setItem('unishop_user_id', 'admin_local_mock_id'); // Mock ID for admin logged in this way
         }
         toast({
-            title: "Admin Login Successful (Local)",
+            title: "Admin Login Successful",
             description: "Redirecting to admin dashboard...",
         });
         router.push("/admin/dashboard"); 
+        router.refresh();
         setIsLoading(false);
         return;
     }
@@ -61,27 +66,21 @@ export default function LoginPage() {
       if (response.ok && result.user) {
         toast({
           title: "Login Successful!",
-          description: `Welcome back! Redirecting...`,
+          description: `Welcome back, ${result.user.name || result.user.fullName || result.user.institutionName || result.user.dealerName}! Redirecting...`,
         });
 
         if (typeof window !== "undefined") {
-          const displayName = result.user.role === 'student' ? result.user.fullName :
-                              result.user.role === 'institution' ? result.user.institutionName :
-                              result.user.role === 'dealer' ? result.user.dealerName :
-                              result.user.email;
           localStorage.setItem('unishop_user_role', result.user.role);
-          localStorage.setItem('unishop_user_displayName', displayName || 'User');
+          localStorage.setItem('unishop_user_displayName', result.user.name || result.user.fullName || result.user.institutionName || result.user.dealerName || 'User');
+          localStorage.setItem('unishop_user_id', result.user.id); // Ensure user ID is stored
         }
         
-        // The JWT is set as an HttpOnly cookie by the server.
-        if (loginRole === 'admin') {
+        if (result.user.role === 'admin') {
             router.push('/admin/dashboard'); 
         } else {
-            router.push('/profile'); 
+            router.push('/'); 
         }
-        // Trigger a reload or a state update that Header can pick up if it doesn't automatically.
-        // Forcing a reload is a simple way if complex state management isn't in place.
-        router.refresh(); // This will re-fetch server components and re-run client effects.
+        router.refresh(); 
       } else {
         toast({
           title: "Login Failed",

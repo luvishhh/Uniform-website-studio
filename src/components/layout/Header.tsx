@@ -13,7 +13,7 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlus, LogInIcon, LogOutIcon, Briefcase, Building, GraduationCap, Home, ShoppingBag, Gift, X } from 'lucide-react';
+import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlus, LogInIcon, LogOutIcon, Briefcase, Building, GraduationCap, Home, ShoppingBag, Gift, X, Settings } from 'lucide-react'; // Added Settings
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -34,43 +34,47 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false); 
 
   useEffect(() => {
     setIsClient(true);
-    // Check for auth token cookie and user details in localStorage
     if (typeof window !== "undefined") {
       const cookieStore = document.cookie;
       const tokenPresent = cookieStore.split(';').some((item) => item.trim().startsWith('unishop_auth_token='));
+      const storedUserRole = localStorage.getItem('unishop_user_role');
+      const storedUserName = localStorage.getItem('unishop_user_displayName');
+      const isAdminLoggedInFlag = localStorage.getItem('isAdminLoggedIn') === 'true'; // For legacy admin login
 
-      if (tokenPresent) {
-        const storedUserRole = localStorage.getItem('unishop_user_role');
-        const storedUserName = localStorage.getItem('unishop_user_displayName');
-        if (storedUserRole && storedUserName) {
-          setIsLoggedIn(true);
-          setCurrentUserRole(storedUserRole);
-          setCurrentUserName(storedUserName);
-        } else {
-          // Token exists but no user info, might be stale state or user cleared localStorage
-          // For simplicity, treat as logged out if localStorage is missing info
-          setIsLoggedIn(false);
-          setCurrentUserRole(null);
-          setCurrentUserName(null);
-          // Optionally, call logout API here to clear server-side session/cookie if necessary
-        }
-      } else {
+      if (tokenPresent && storedUserRole && storedUserName) {
+        setIsLoggedIn(true);
+        setCurrentUserRole(storedUserRole);
+        setCurrentUserName(storedUserName);
+      } else if (isAdminLoggedInFlag && storedUserRole === 'admin') { // Handle legacy admin login
+        setIsLoggedIn(true);
+        setCurrentUserRole('admin');
+        setCurrentUserName(storedUserName || 'Admin');
+      }
+      else {
         setIsLoggedIn(false);
         setCurrentUserRole(null);
         setCurrentUserName(null);
+        // If token isn't present but local storage items are, clear them for consistency
+        if(!tokenPresent && (storedUserRole || storedUserName)) {
+            localStorage.removeItem('unishop_user_role');
+            localStorage.removeItem('unishop_user_displayName');
+            localStorage.removeItem('unishop_user_id');
+        }
       }
     }
-  }, [pathname]); // Re-evaluate on pathname change to reflect state if navigation happens without full page reload
+  }, [pathname]); // Re-evaluate on pathname change
 
   const handleLogout = async () => {
-    setIsLoading(true); // Optional: add a loading state
+    setIsLoading(true);
     try {
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       if (!response.ok) {
-        throw new Error('Logout failed');
+        // Even if API call fails, proceed to clear client-side state for better UX
+        console.error("Logout API call failed, status:", response.status);
       }
       toast({
         title: "Logged Out",
@@ -80,27 +84,25 @@ export default function Header() {
       console.error("Logout error:", error);
       toast({
         title: "Logout Error",
-        description: "Could not log out. Please try again.",
+        description: "Could not log out. Please try again or check your connection.",
         variant: "destructive",
       });
     } finally {
       if (typeof window !== "undefined") {
           localStorage.removeItem('unishop_user_role');
           localStorage.removeItem('unishop_user_displayName');
-          // Also remove admin specific local storage if it exists
+          localStorage.removeItem('unishop_user_id');
           localStorage.removeItem('isAdminLoggedIn'); 
       }
       setIsLoggedIn(false);
       setCurrentUserRole(null);
       setCurrentUserName(null);
       setIsLoading(false);
-      router.push('/'); // Redirect to home
-      router.refresh(); // Force refresh to ensure server components re-render correctly
+      if (isMobileMenuOpen) setIsMobileMenuOpen(false);
+      router.push('/'); 
+      router.refresh(); 
     }
   };
-  
-  const [isLoading, setIsLoading] = useState(false); // For logout
-
 
   const NavLinkItem = ({ href, label, isActive, onClick, icon: Icon, className }: { href: string; label: string; isActive: boolean; onClick?: () => void; icon?: React.ElementType, className?:string }) => (
     <Link href={href} passHref>
@@ -138,7 +140,7 @@ export default function Header() {
       />
     ));
 
-    // Add Admin Panel link only if the user is an admin AND logged in via the main system
+    // Add Admin Panel link only if the user is an admin
     if (isLoggedIn && currentUserRole === 'admin') {
       linksToRender.push(
         <NavLinkItem 
@@ -170,7 +172,6 @@ export default function Header() {
     );
   }
 
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
@@ -184,15 +185,17 @@ export default function Header() {
           <Link href="/cart" passHref>
             <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative">
               <ShoppingCart className="h-5 w-5" />
-              {/* <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span> */}
+              {/* Mock cart count can be added here if needed */}
             </Button>
           </Link>
           
           {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="User Account">
-                  <UserIcon className="h-5 w-5" />
+                <Button variant="ghost" className="px-2 py-1 h-auto md:px-3 md:py-2">
+                  <UserIcon className="h-5 w-5 md:mr-1.5" />
+                  <span className="hidden md:inline text-sm font-medium">{currentUserName || 'Account'}</span>
+                  <ChevronDown className="ml-1 h-4 w-4 opacity-70 hidden md:inline" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -210,13 +213,14 @@ export default function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center gap-2 py-2"><UserIcon className="h-4 w-4 text-muted-foreground"/> My Profile</Link>
                 </DropdownMenuItem>
+                 {/* The profile page already includes Order History and Settings tabs */}
                 {currentUserRole === 'admin' && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin/dashboard" className="flex items-center gap-2 py-2"><ShieldCheck className="h-4 w-4 text-muted-foreground"/>Admin Panel</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} disabled={isLoading} className="text-destructive focus:bg-destructive/10 focus:text-destructive flex items-center gap-2 py-2">
+                <DropdownMenuItem onClick={handleLogout} disabled={isLoading} className="text-destructive focus:bg-destructive/10 focus:text-destructive flex items-center gap-2 py-2 cursor-pointer">
                   <LogOutIcon className="h-4 w-4" /> {isLoading ? "Logging out..." : "Logout"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -241,6 +245,7 @@ export default function Header() {
             </div>
           )}
           
+          {/* Mobile Menu */}
           <div className="md:hidden">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -248,21 +253,21 @@ export default function Header() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full max-w-xs sm:max-w-sm p-0">
+              <SheetContent side="right" className="w-full max-w-xs sm:max-w-sm p-0 flex flex-col">
                 <div className="flex h-16 items-center justify-between border-b px-6">
                   <Logo onClick={() => setIsMobileMenuOpen(false)} />
                   <SheetClose asChild>
                     <Button variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
                   </SheetClose>
                 </div>
-                <nav className="mt-6 flex flex-col space-y-1 px-4">
+                <nav className="mt-6 flex flex-col space-y-1 px-4 flex-grow">
                   {renderNavLinks(true)}
                 </nav>
-                <div className="mt-6 border-t px-4 pt-6 space-y-3">
+                <div className="mt-auto border-t px-4 py-6 space-y-3">
                   {isLoggedIn ? (
                     <>
                       {currentUserName && (
-                        <div className="px-4 py-2 text-sm">
+                        <div className="px-4 py-2 text-sm mb-2 border-b pb-4">
                           <p className="font-medium">Hi, {currentUserName}</p>
                           <p className="text-xs text-muted-foreground capitalize">{currentUserRole}</p>
                         </div>
@@ -285,7 +290,7 @@ export default function Header() {
                               <UserPlus className="mr-2 h-5 w-5" /> Register <ChevronDown className="ml-auto h-4 w-4 opacity-70" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" side="bottom" className="w-[calc(100vw-2rem-8px)] ml-4"> {/* Check this width for mobile */}
+                          <DropdownMenuContent align="end" side="top" className="w-[calc(100%-2rem)] mb-2">
                             <DropdownMenuItem asChild onClick={() => setIsMobileMenuOpen(false)}><Link href="/register/student" className="flex items-center gap-2 py-2"><GraduationCap className="h-4 w-4 text-muted-foreground"/> Student</Link></DropdownMenuItem>
                             <DropdownMenuItem asChild onClick={() => setIsMobileMenuOpen(false)}><Link href="/register/institution" className="flex items-center gap-2 py-2"><Building className="h-4 w-4 text-muted-foreground"/> Institution</Link></DropdownMenuItem>
                             <DropdownMenuItem asChild onClick={() => setIsMobileMenuOpen(false)}><Link href="/register/dealer" className="flex items-center gap-2 py-2"><Briefcase className="h-4 w-4 text-muted-foreground"/> Dealer</Link></DropdownMenuItem>
