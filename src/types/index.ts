@@ -35,6 +35,7 @@ export type BaseUser = {
   passwordHash: string; 
   role: 'student' | 'institution' | 'dealer' | 'admin';
   contactNumber?: string;
+  imageUrl?: string; // Added for profile picture
 };
 
 export type StudentUser = BaseUser & {
@@ -95,7 +96,7 @@ export type CartItem = {
 export type Order = {
   id: string;
   _id?: ObjectId; // For MongoDB
-  userId: string; 
+  userId: string; // This should be the string representation of the User's _id
   items: CartItem[];
   totalAmount: number;
   status: 'Placed' | 'Confirmed' | 'Shipped' | 'Delivered' | 'Cancelled';
