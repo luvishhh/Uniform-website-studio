@@ -67,7 +67,7 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
           <p className="text-sm text-muted-foreground capitalize mt-0.5">{product.category} &bull; {product.gender}</p>
         </div>
         
-        <div className="flex items-center justify-end mt-auto"> {/* Price removed, adjusted justify to end */}
+        <div className="flex items-center justify-center mt-auto"> {/* Price removed, adjusted justify to center */}
           {!isAdminView && (
             <Button 
               size="sm"
@@ -103,3 +103,4 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
     </Card>
   );
 }
+
