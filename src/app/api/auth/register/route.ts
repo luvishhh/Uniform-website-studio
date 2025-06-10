@@ -1,6 +1,6 @@
 
 import { connectToDatabase } from '@/lib/mongodb';
-import type { StudentUser, InstitutionUser, DealerUser, AdminUser, User } from '@/types';
+import type { StudentUser, InstitutionUser, DealerUser, AdminUser, User, CartItem } from '@/types';
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let newUser: Omit<User, 'id'> & { _id?: ObjectId };
+    let newUser: Omit<User, 'id'> & { _id?: ObjectId; cart: CartItem[] };
 
     switch (role) {
       case 'student':
@@ -45,7 +45,8 @@ export async function POST(request: Request) {
           ...userData,
           role: 'student',
           passwordHash: hashedPassword,
-        } as Omit<StudentUser, 'id'>;
+          cart: [], // Initialize empty cart
+        } as Omit<StudentUser, 'id'> & { cart: CartItem[] };
         break;
       case 'institution':
         if (!userData.email || !userData.institutionName || !userData.institutionType || !userData.institutionalAddress || !userData.contactNumber) {
@@ -55,7 +56,8 @@ export async function POST(request: Request) {
           ...userData,
           role: 'institution',
           passwordHash: hashedPassword,
-        } as Omit<InstitutionUser, 'id'>;
+          cart: [], // Initialize empty cart
+        } as Omit<InstitutionUser, 'id'> & { cart: CartItem[] };
         break;
       case 'dealer':
          if (!userData.email || !userData.dealerName || !userData.contactNumber || !userData.businessAddress || !userData.gstinNumber) {
@@ -65,7 +67,8 @@ export async function POST(request: Request) {
           ...userData,
           role: 'dealer',
           passwordHash: hashedPassword,
-        } as Omit<DealerUser, 'id'>;
+          cart: [], // Initialize empty cart
+        } as Omit<DealerUser, 'id'> & { cart: CartItem[] };
         break;
       case 'admin': // Basic admin registration, could be more restricted
         if (!userData.email) {
@@ -75,7 +78,8 @@ export async function POST(request: Request) {
             ...userData,
             role: 'admin',
             passwordHash: hashedPassword,
-        } as Omit<AdminUser, 'id'>;
+            cart: [], // Initialize empty cart
+        } as Omit<AdminUser, 'id'> & { cart: CartItem[] };
         break;
       default:
         return NextResponse.json({ message: 'Invalid user role' }, { status: 400 });
@@ -98,3 +102,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: `Internal server error: ${errorMessage}` }, { status: 500 });
   }
 }
+

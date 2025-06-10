@@ -36,6 +36,7 @@ export type BaseUser = {
   role: 'student' | 'institution' | 'dealer' | 'admin';
   contactNumber?: string;
   imageUrl?: string; // Added for profile picture
+  cart?: CartItem[]; // Added for user's shopping cart
 };
 
 export type StudentUser = BaseUser & {
@@ -125,3 +126,4 @@ export type Donation = {
   submissionDate: string; // Should be ISOString
   status: 'Pending' | 'Collected' | 'Distributed';
 };
+
