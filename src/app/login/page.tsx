@@ -23,47 +23,71 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData.entries());
+    const emailOrRoll = formData.get(loginRole === "student" ? "rollNumber" : "email") as string;
+    const password = formData.get("password") as string;
     
-    console.log("Login form submitted (mock)", { role: loginRole, ...data });
-
-    if (loginRole === "admin") {
-      // Mock admin authentication
-      if (data.email === "Lavishkhare@gmail.com" && data.password === "lavish@123") {
+    // Special handling for the hardcoded admin login if selected
+    if (loginRole === "admin" && emailOrRoll === "Lavishkhare@gmail.com" && password === "lavish@123") {
         if (typeof window !== "undefined") {
-          localStorage.setItem("isAdminLoggedIn", "true");
+            localStorage.setItem("isAdminLoggedIn", "true"); // This is for the separate /admin/login path
         }
         toast({
-          title: "Admin Login Successful",
-          description: "Redirecting to admin dashboard...",
+            title: "Admin Login Successful (Local)",
+            description: "Redirecting to admin dashboard...",
         });
-        router.push("/admin/dashboard");
-        return; 
-      } else {
-        toast({
-          title: "Admin Login Failed",
-          description: "Invalid email or password for admin.",
-          variant: "destructive",
-        });
+        router.push("/admin/dashboard"); // Redirect to the dedicated admin dashboard
         setIsLoading(false);
         return;
-      }
     }
 
-    // Mock login for other roles
-    toast({
-      title: "Login Attempt (Mock)",
-      description: `Attempting to log in as ${loginRole}. This is a mock login. See console for details.`,
-    });
-    // In a real app, you would call an authentication API here
-    // and then redirect on success or show an error message for other roles.
-    // For example, redirect to /profile or home page
-    // router.push('/profile'); 
-    setIsLoading(false);
+    const payload = {
+      identifier: emailOrRoll,
+      password: password,
+      role: loginRole,
+    };
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Login Successful!",
+          description: `Welcome back! Redirecting...`,
+        });
+        // The JWT is set as an HttpOnly cookie by the server.
+        // The client might store some non-sensitive user info (like role, name) from `result.user` in context/localStorage
+        // For now, just redirect.
+        if (loginRole === 'admin') { // This admin is a regular admin role, not the hardcoded one.
+            router.push('/admin/dashboard'); // Or a general user admin page if different.
+        } else {
+            router.push('/profile'); // Or to the homepage.
+        }
+      } else {
+        toast({
+          title: "Login Failed",
+          description: result.message || "Invalid credentials or an error occurred.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Login Error",
+        description: "Could not connect to the server. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const togglePasswordVisibility = () => {
@@ -85,7 +109,8 @@ export default function LoginPage() {
               <div>
                 <Label className="mb-2 block font-medium">Login as:</Label>
                 <RadioGroup
-                  defaultValue="student"
+                  name="loginRole"
+                  value={loginRole}
                   onValueChange={(value: string) => setLoginRole(value as LoginRole)}
                   className="grid grid-cols-2 gap-x-4 gap-y-2"
                 >

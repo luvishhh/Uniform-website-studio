@@ -18,21 +18,67 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function StudentRegisterPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [institutionType, setInstitutionType] = useState<"school" | "college" | "">("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Form data processing logic would go here
-    console.log("Student registration form submitted (mock)");
-    toast({
-      title: "Registration Successful (Mock)",
-      description: "Your student account has been created.",
-    });
-    (event.target as HTMLFormElement).reset();
-    setInstitutionType("");
+    setIsLoading(true);
+    const formData = new FormData(event.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    
+    const payload = {
+      role: "student",
+      rollNumber: data.rollNumber,
+      schoolCollegeName: data.schoolCollegeName,
+      fullName: data.fullName,
+      password: data.password,
+      institutionType: data.institutionType,
+      gradeOrCourse: institutionType === "school" ? data.grade : data.course,
+      year: institutionType === "college" ? data.year : undefined,
+      parentName: data.parentName,
+      parentContactNumber: data.parentContactNumber,
+      email: data.email || undefined, // Optional email
+    };
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Registration Successful!",
+          description: "Your student account has been created. Please login.",
+        });
+        (event.target as HTMLFormElement).reset();
+        setInstitutionType("");
+        router.push('/login');
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: result.message || "An error occurred.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Registration Error",
+        description: "Could not connect to the server. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,26 +95,28 @@ export default function StudentRegisterPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <Label htmlFor="rollNumber">Roll Number</Label>
-                <Input id="rollNumber" placeholder="e.g., S1001 / C2002" required />
+                <Input id="rollNumber" name="rollNumber" placeholder="e.g., S1001 / C2002" required disabled={isLoading} />
               </div>
               <div>
                 <Label htmlFor="schoolCollegeName">School/College Name</Label>
-                <Input id="schoolCollegeName" placeholder="e.g., Greenwood High" required />
+                <Input id="schoolCollegeName" name="schoolCollegeName" placeholder="e.g., Greenwood High" required disabled={isLoading} />
               </div>
               <div>
                 <Label htmlFor="fullName">Full Name</Label>
-                <Input id="fullName" placeholder="e.g., Alice Wonderland" required />
+                <Input id="fullName" name="fullName" placeholder="e.g., Alice Wonderland" required disabled={isLoading} />
               </div>
               <div>
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="••••••••" required />
+                <Input id="password" name="password" type="password" placeholder="••••••••" required disabled={isLoading} />
               </div>
               <div>
                 <Label htmlFor="institutionType">Institution Type</Label>
                 <Select
+                  name="institutionType"
                   required
                   onValueChange={(value: "school" | "college") => setInstitutionType(value)}
                   value={institutionType}
+                  disabled={isLoading}
                 >
                   <SelectTrigger id="institutionType">
                     <SelectValue placeholder="Select institution type" />
@@ -83,37 +131,37 @@ export default function StudentRegisterPage() {
               {institutionType === "school" && (
                 <div>
                   <Label htmlFor="grade">Grade</Label>
-                  <Input id="grade" placeholder="e.g., 10th Grade" required />
+                  <Input id="grade" name="grade" placeholder="e.g., 10th Grade" required={institutionType === "school"} disabled={isLoading} />
                 </div>
               )}
               {institutionType === "college" && (
                 <>
                   <div>
                     <Label htmlFor="course">Course</Label>
-                    <Input id="course" placeholder="e.g., B.Sc. Computer Science" required />
+                    <Input id="course" name="course" placeholder="e.g., B.Sc. Computer Science" required={institutionType === "college"} disabled={isLoading} />
                   </div>
                   <div>
                     <Label htmlFor="year">Year</Label>
-                    <Input id="year" placeholder="e.g., 1st Year, 2nd Year" />
+                    <Input id="year" name="year" placeholder="e.g., 1st Year, 2nd Year" disabled={isLoading} />
                   </div>
                 </>
               )}
 
               <div>
                 <Label htmlFor="parentName">Parent Name</Label>
-                <Input id="parentName" placeholder="e.g., Queen of Hearts" required />
+                <Input id="parentName" name="parentName" placeholder="e.g., Queen of Hearts" required disabled={isLoading} />
               </div>
               <div>
                 <Label htmlFor="parentContactNumber">Parent Contact Number</Label>
-                <Input id="parentContactNumber" type="tel" placeholder="e.g., 555-1234" required />
+                <Input id="parentContactNumber" name="parentContactNumber" type="tel" placeholder="e.g., 555-1234" required disabled={isLoading} />
               </div>
               <div>
                 <Label htmlFor="email">Your Email (Optional, for communication)</Label>
-                <Input id="email" type="email" placeholder="e.g., student@example.com" />
+                <Input id="email" name="email" type="email" placeholder="e.g., student@example.com" disabled={isLoading} />
               </div>
 
-              <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                Register Student Account
+              <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
+                {isLoading ? "Registering..." : "Register Student Account"}
               </Button>
 
               <p className="text-sm text-center text-muted-foreground">
