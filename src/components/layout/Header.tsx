@@ -13,7 +13,7 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlus, LogInIcon, LogOutIcon, Briefcase, Building, GraduationCap, Home, ShoppingBag, Gift, X, Settings } from 'lucide-react';
+import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlus, LogInIcon, LogOutIcon, Briefcase, Building, GraduationCap, Home, ShoppingBag, Gift, X, Settings, Package } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -211,6 +211,12 @@ export default function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center gap-2 py-2"><UserIcon className="h-4 w-4 text-muted-foreground"/> My Profile</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center gap-2 py-2"><Package className="h-4 w-4 text-muted-foreground"/> Order History</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center gap-2 py-2"><Settings className="h-4 w-4 text-muted-foreground"/> Account Settings</Link>
+                </DropdownMenuItem>
                 {currentUserRole === 'admin' && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin/dashboard" className="flex items-center gap-2 py-2"><ShieldCheck className="h-4 w-4 text-muted-foreground"/>Admin Panel</Link>
@@ -271,6 +277,12 @@ export default function Header() {
                       <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile'); }}>
                         <Link href="/profile"><UserIcon className="mr-2 h-5 w-5"/> My Profile</Link>
                       </Button>
+                      <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile'); }}>
+                        <Link href="/profile"><Package className="mr-2 h-5 w-5"/> Order History</Link>
+                      </Button>
+                       <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile'); }}>
+                        <Link href="/profile"><Settings className="mr-2 h-5 w-5"/> Account Settings</Link>
+                      </Button>
                       <Button className="w-full justify-start text-base py-3 px-4 text-destructive hover:text-destructive" variant="ghost" onClick={handleLogout} disabled={isLoading}>
                         <LogOutIcon className="mr-2 h-5 w-5"/> {isLoading ? "Logging out..." : "Logout"}
                       </Button>
@@ -305,3 +317,4 @@ export default function Header() {
 }
 
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
+
