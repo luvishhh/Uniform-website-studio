@@ -13,9 +13,9 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlus, LogInIcon, LogOutIcon, Briefcase, Building, GraduationCap, Home, ShoppingBag, Gift, X, Settings } from 'lucide-react'; // Added Settings
+import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlus, LogInIcon, LogOutIcon, Briefcase, Building, GraduationCap, Home, ShoppingBag, Gift, X, Settings } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
 const navLinks = [
@@ -36,38 +36,48 @@ export default function Header() {
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false); 
 
-  useEffect(() => {
-    setIsClient(true); // Ensures localStorage is only accessed client-side
+  const checkAuthState = useCallback(() => {
     if (typeof window !== "undefined") {
       const storedUserRole = localStorage.getItem('unishop_user_role');
       const storedUserName = localStorage.getItem('unishop_user_displayName');
-      // const storedUserId = localStorage.getItem('unishop_user_id'); // User ID is also set by login page
 
-      // If role and name are in localStorage, consider the user logged in for UI purposes.
-      // The actual session validity is managed by the HttpOnly cookie on the server.
       if (storedUserRole && storedUserName) {
         setIsLoggedIn(true);
         setCurrentUserRole(storedUserRole);
         setCurrentUserName(storedUserName);
       } else {
-        // If essential localStorage items are missing, treat as logged out.
-        // And ensure all related items are cleared for consistency.
         setIsLoggedIn(false);
         setCurrentUserRole(null);
         setCurrentUserName(null);
+        // Ensure all related localStorage items are cleared for consistency
         localStorage.removeItem('unishop_user_role');
         localStorage.removeItem('unishop_user_displayName');
         localStorage.removeItem('unishop_user_id');
-        localStorage.removeItem('isAdminLoggedIn'); // Clear legacy admin flag too
+        localStorage.removeItem('isAdminLoggedIn'); 
       }
     }
-  }, [pathname]); // Re-evaluate on pathname change. router.refresh() from login should trigger this.
+  }, []);
+
+  useEffect(() => {
+    setIsClient(true); 
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      checkAuthState(); // Initial check
+      window.addEventListener('authChange', checkAuthState);
+    }
+    return () => {
+      if (isClient && typeof window !== "undefined") {
+        window.removeEventListener('authChange', checkAuthState);
+      }
+    };
+  }, [isClient, pathname, checkAuthState]); 
 
   const handleLogout = async () => {
     setIsLoading(true);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      // No need to check response.ok for logout, just proceed with client-side cleanup
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
@@ -85,10 +95,8 @@ export default function Header() {
           localStorage.removeItem('unishop_user_displayName');
           localStorage.removeItem('unishop_user_id');
           localStorage.removeItem('isAdminLoggedIn'); 
+          window.dispatchEvent(new CustomEvent('authChange')); // Dispatch event
       }
-      setIsLoggedIn(false);
-      setCurrentUserRole(null);
-      setCurrentUserName(null);
       setIsLoading(false);
       if (isMobileMenuOpen) setIsMobileMenuOpen(false);
       router.push('/'); 
@@ -132,7 +140,6 @@ export default function Header() {
       />
     ));
 
-    // Add Admin Panel link only if the user is an admin
     if (isLoggedIn && currentUserRole === 'admin') {
       linksToRender.push(
         <NavLinkItem 
@@ -177,7 +184,6 @@ export default function Header() {
           <Link href="/cart" passHref>
             <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative">
               <ShoppingCart className="h-5 w-5" />
-              {/* Mock cart count can be added here if needed */}
             </Button>
           </Link>
           
@@ -205,7 +211,6 @@ export default function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center gap-2 py-2"><UserIcon className="h-4 w-4 text-muted-foreground"/> My Profile</Link>
                 </DropdownMenuItem>
-                 {/* The profile page already includes Order History and Settings tabs */}
                 {currentUserRole === 'admin' && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin/dashboard" className="flex items-center gap-2 py-2"><ShieldCheck className="h-4 w-4 text-muted-foreground"/>Admin Panel</Link>
@@ -237,7 +242,6 @@ export default function Header() {
             </div>
           )}
           
-          {/* Mobile Menu */}
           <div className="md:hidden">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -301,4 +305,3 @@ export default function Header() {
 }
 
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
-

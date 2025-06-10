@@ -30,13 +30,13 @@ export default function LoginPage() {
     const emailOrRoll = formData.get(loginRole === "student" ? "rollNumber" : "email") as string;
     const password = formData.get("password") as string;
     
-    // Specific local check for hardcoded admin credentials if chosen via main login form
     if (loginRole === "admin" && emailOrRoll === "Lavishkhare@gmail.com" && password === "lavish@123") {
         if (typeof window !== "undefined") {
-            localStorage.setItem("isAdminLoggedIn", "true"); // Legacy admin flag
+            localStorage.setItem("isAdminLoggedIn", "true");
             localStorage.setItem('unishop_user_role', 'admin');
             localStorage.setItem('unishop_user_displayName', 'Admin User');
-            localStorage.setItem('unishop_user_id', 'admin_local_mock_id'); // Mock ID for admin logged in this way
+            localStorage.setItem('unishop_user_id', 'admin_local_mock_id');
+            window.dispatchEvent(new CustomEvent('authChange')); // Dispatch event
         }
         toast({
             title: "Admin Login Successful",
@@ -64,15 +64,17 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (response.ok && result.user) {
+        const displayName = result.user.name || result.user.fullName || result.user.institutionName || result.user.dealerName || 'User';
         toast({
           title: "Login Successful!",
-          description: `Welcome back, ${result.user.name || result.user.fullName || result.user.institutionName || result.user.dealerName}! Redirecting...`,
+          description: `Welcome back, ${displayName}! Redirecting...`,
         });
 
         if (typeof window !== "undefined") {
           localStorage.setItem('unishop_user_role', result.user.role);
-          localStorage.setItem('unishop_user_displayName', result.user.name || result.user.fullName || result.user.institutionName || result.user.dealerName || 'User');
-          localStorage.setItem('unishop_user_id', result.user.id); // Ensure user ID is stored
+          localStorage.setItem('unishop_user_displayName', displayName);
+          localStorage.setItem('unishop_user_id', result.user.id);
+          window.dispatchEvent(new CustomEvent('authChange')); // Dispatch event
         }
         
         if (result.user.role === 'admin') {
