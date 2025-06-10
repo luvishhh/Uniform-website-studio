@@ -63,7 +63,11 @@ export default function InstitutionDashboardPage() {
           if (userRes.ok) {
             const userData: InstitutionUser = await userRes.json();
             setCurrentUser(userData);
-            const products = mockProducts.filter(p => p.institution && userData.institutionName && p.institution.toLowerCase() === userData.institutionName.toLowerCase());
+            const products = mockProducts.filter(p => 
+              p.institution && 
+              userData.institutionName && 
+              p.institution.toLowerCase() === userData.institutionName.toLowerCase()
+            );
             setInstitutionProducts(products);
           } else {
             console.error("Failed to fetch institution details");
@@ -87,9 +91,10 @@ export default function InstitutionDashboardPage() {
       const institutionNameLower = currentUser.institutionName.toLowerCase();
 
       const studentsOfInstitution = mockUsers.filter(
-        (u): u is StudentUser => u.role === 'student' &&
-                                 typeof (u as StudentUser).schoolCollegeName === 'string' &&
-                                 (u as StudentUser).schoolCollegeName.toLowerCase() === institutionNameLower
+        (u): u is StudentUser => 
+          u.role === 'student' &&
+          typeof (u as StudentUser).schoolCollegeName === 'string' &&
+          (u as StudentUser).schoolCollegeName.toLowerCase() === institutionNameLower
       );
       setRegisteredStudents(studentsOfInstitution);
 
@@ -121,12 +126,12 @@ export default function InstitutionDashboardPage() {
             const existingEntry = purchasingStudentsMap.get(studentData.id);
             if (existingEntry) {
               existingEntry.purchasedItems.push(...orderItemsForInstitution);
-              existingEntry.totalSpent += orderItemsForInstitution.reduce((sum, item) => sum + item.price * item.quantity, 0);
+              existingEntry.totalSpent += orderItemsForInstitution.reduce((sum, cartItem) => sum + cartItem.price * cartItem.quantity, 0);
             } else {
               purchasingStudentsMap.set(studentData.id, {
                 student: studentData,
                 purchasedItems: [...orderItemsForInstitution],
-                totalSpent: orderItemsForInstitution.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                totalSpent: orderItemsForInstitution.reduce((sum, cartItem) => sum + cartItem.price * cartItem.quantity, 0)
               });
             }
           }
@@ -189,7 +194,7 @@ export default function InstitutionDashboardPage() {
     return Object.entries(monthlySales)
       .map(([name, data]) => ({ name, ...data }))
       .sort((a,b) => a.date.getTime() - b.date.getTime() );
-  }, [currentUser, institutionProducts, dateRange]); // Removed mockOrders from dependencies as it's constant
+  }, [currentUser, institutionProducts, dateRange]);
 
   const productSalesDistribution = useMemo(() => {
     if (!currentUser || !institutionProducts.length) return [];
@@ -212,7 +217,7 @@ export default function InstitutionDashboardPage() {
         });
     });
     return Object.values(salesByProduct).sort((a,b) => b.value - a.value);
-  }, [currentUser, institutionProducts, dateRange]); // Removed mockOrders
+  }, [currentUser, institutionProducts, dateRange]);
 
 
   if (isLoading) {
@@ -240,7 +245,7 @@ export default function InstitutionDashboardPage() {
 
       <section>
         <h2 className="text-2xl font-bold font-headline mb-6">Key Analytics Summary</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Registered Students</CardTitle>
@@ -279,6 +284,16 @@ export default function InstitutionDashboardPage() {
               <CardContent>
                 <div className="text-lg font-bold truncate" title={mostPopularProduct.name}>{mostPopularProduct.name}</div>
                 <p className="text-xs text-muted-foreground">{mostPopularProduct.quantity} units sold</p>
+              </CardContent>
+            </Card>
+             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Uniforms Listed</CardTitle>
+                <PackageIcon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{institutionProducts.length}</div>
+                <p className="text-xs text-muted-foreground">Unique uniform products for your institution</p>
               </CardContent>
             </Card>
         </div>
@@ -491,21 +506,7 @@ export default function InstitutionDashboardPage() {
 
       <section>
           <h2 className="text-2xl font-bold font-headline mb-6">Quick Actions</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg font-medium font-headline">Manage Uniform Catalog</CardTitle>
-                <ListChecks className="h-5 w-5 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Review and update the list of approved uniforms for your institution.
-                </p>
-                <Button asChild variant="outline">
-                  <Link href="/institution/catalog">Go to Catalog</Link>
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2"> {/* Adjusted grid for two items */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-medium font-headline">Bulk Order Inquiries</CardTitle>
@@ -553,7 +554,7 @@ export default function InstitutionDashboardPage() {
                 <p className="text-muted-foreground">
                     No specific uniforms are currently listed for {currentUser?.institutionName || "your institution"}.
                     <br />
-                    Please contact support or use the "Manage Catalog" section to update your uniform list.
+                    Please use the "Bulk Orders" section for inquiries or contact support to update your uniform list.
                 </p>
                  <Button variant="link" className="mt-4" asChild><Link href="/contact">Contact Support</Link></Button>
             </CardContent>
@@ -566,3 +567,5 @@ export default function InstitutionDashboardPage() {
 
 
       
+
+    
