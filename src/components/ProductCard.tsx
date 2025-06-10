@@ -4,7 +4,7 @@
 import type { Product } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Card, CardContent, CardFooter } from '@/components/ui/card'; // Removed CardHeader
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, ShoppingCart, Edit, Trash2 } from 'lucide-react';
@@ -17,7 +17,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, isAdminView = false }: ProductCardProps) {
   return (
-    <Card className="overflow-hidden h-full flex flex-col group bg-card shadow-lg hover:shadow-xl focus-within:shadow-xl transition-all duration-300 ease-in-out rounded-xl border border-border/20 hover:border-primary/50 focus-within:border-primary/50 relative">
+    <Card className="overflow-hidden h-full flex flex-col group bg-card shadow-lg hover:shadow-xl focus-within:shadow-xl transition-all duration-300 ease-in-out rounded-xl border border-border/30 hover:border-primary/60 focus-within:border-primary/60 relative">
       <Link href={`/products/${product.id}`} className="block focus:outline-none" aria-label={`View details for ${product.name}`}>
         <div className="aspect-[3/4] relative w-full overflow-hidden rounded-t-xl">
           <Image
@@ -60,7 +60,7 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
             </p>
           )}
           <Link href={`/products/${product.id}`} className="focus:outline-none">
-            <h3 className="text-lg font-semibold font-headline leading-snug group-hover:text-primary transition-colors line-clamp-2">
+            <h3 className="text-lg font-bold font-headline leading-snug group-hover:text-primary transition-colors line-clamp-2">
               {product.name}
             </h3>
           </Link>
@@ -104,5 +104,3 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
     </Card>
   );
 }
-
-    
