@@ -20,36 +20,22 @@ import {
 } from "@/components/ui/carousel";
 import React from "react";
 
+// Simplified carouselSlides for background images only
 const carouselSlides = [
   {
     imageSrc: "https://placehold.co/1920x1080.png",
     imageAlt: "Students in high-quality UniShop uniforms",
     "data-ai-hint": "students group modern",
-    headline: "Dress for Success. Discover UniShop.",
-    description: "Premium quality school, corporate, and healthcare uniforms designed for comfort and durability.",
-    buttonText: "Shop All Collections",
-    buttonLink: "/products",
-    contentPosition: "center",
   },
   {
     imageSrc: "https://placehold.co/1920x1080.png",
     imageAlt: "Close-up of UniShop uniform fabric",
     "data-ai-hint": "fabric texture close-up",
-    headline: "Quality You Can Feel, Style They'll Love.",
-    description: "Our uniforms blend professional style with everyday practicality, ensuring your team or students always look their best.",
-    buttonText: "Explore School Uniforms",
-    buttonLink: "/products?category=school",
-    contentPosition: "left",
   },
   {
     imageSrc: "https://placehold.co/1920x1080.png",
     imageAlt: "UniShop donation program visual",
     "data-ai-hint": "uniforms donation drive",
-    headline: "Give Back with UniShop.",
-    description: "Join our uniform donation program and help us make a difference in the community. It's easy and impactful.",
-    buttonText: "Learn About Donations",
-    buttonLink: "/donate",
-    contentPosition: "right",
   },
 ];
 
@@ -58,19 +44,20 @@ export default function HomePage() {
   const featuredProducts = mockProducts.filter(p => p.featured).slice(0, 4);
   const schoolCategory = mockCategories.find(cat => cat.slug === 'school');
   const collegeCategory = mockCategories.find(cat => cat.slug === 'college');
-  const autoplay = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true }));
+  const autoplayPlugin = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true }));
 
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow">
-        {/* Hero Section - New Carousel Design */}
+        {/* Hero Section - New Design with Static Text Overlay */}
         <section className="relative w-full h-[70vh] md:h-[85vh] lg:h-screen overflow-hidden group">
+          {/* Background Carousel */}
           <Carousel
             opts={{ loop: true }}
-            plugins={[autoplay.current]}
-            className="w-full h-full"
+            plugins={[autoplayPlugin.current]}
+            className="absolute inset-0 w-full h-full z-0"
           >
             <CarouselContent>
               {carouselSlides.map((slide, index) => (
@@ -84,48 +71,40 @@ export default function HomePage() {
                     data-ai-hint={slide['data-ai-hint']}
                     sizes="100vw"
                   />
-                  <div className="absolute inset-0 bg-black/40"></div> {/* Darkening Overlay */}
-                  <div className={cn(
-                    "absolute inset-0 flex flex-col justify-center p-8 md:p-16 lg:p-24 text-white",
-                    slide.contentPosition === "center" && "items-center text-center",
-                    slide.contentPosition === "left" && "items-start text-left",
-                    slide.contentPosition === "right" && "items-end text-right"
-                  )}>
-                    <div className={cn(
-                        "max-w-lg md:max-w-xl lg:max-w-2xl bg-black/30 backdrop-blur-sm p-6 md:p-8 rounded-lg shadow-xl",
-                         slide.contentPosition === "center" && "text-center",
-                         slide.contentPosition === "left" && "text-left",
-                         slide.contentPosition === "right" && "text-right"
-                      )}
-                    >
-                      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-headline mb-4 md:mb-6 leading-tight text-shadow-md">
-                        {slide.headline}
-                      </h1>
-                      <p className="text-base md:text-lg lg:text-xl mb-6 md:mb-8 text-shadow-sm opacity-90">
-                        {slide.description}
-                      </p>
-                      <Button
-                        size="lg"
-                        className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-primary/30 transition-all duration-300 transform hover:scale-105 px-8 py-3 text-base"
-                        asChild
-                      >
-                        <Link href={slide.buttonLink} className="flex items-center">
-                          {slide.buttonText} <ArrowRight className="ml-2 h-5 w-5" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
+                  <div className="absolute inset-0 bg-black/40 pointer-events-none"></div> {/* Darkening Overlay for contrast */}
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            {/* Carousel Controls: Positioned inside Carousel, but need high z-index to be over static text panel if it overlaps */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
               <CarouselPrevious className="bg-background/70 hover:bg-background text-foreground border-border hover:border-primary h-10 w-10 md:h-12 md:w-12" />
             </div>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
               <CarouselNext className="bg-background/70 hover:bg-background text-foreground border-border hover:border-primary h-10 w-10 md:h-12 md:w-12" />
             </div>
-            <CarouselDots className="bottom-6 md:bottom-8"/>
+            <CarouselDots className="absolute bottom-6 md:bottom-8 z-20"/>
           </Carousel>
+
+          {/* Static Text Overlay */}
+          <div className="absolute inset-0 flex flex-col justify-center items-center p-8 md:p-16 text-center text-white z-10 pointer-events-none">
+            <div className="max-w-lg md:max-w-xl lg:max-w-2xl bg-black/50 backdrop-blur-md p-8 md:p-10 rounded-lg shadow-2xl pointer-events-auto">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline mb-6 leading-tight">
+                Dress for Success. Discover UniShop.
+              </h1>
+              <p className="text-lg md:text-xl lg:text-2xl mb-8 opacity-95">
+                Premium quality school, corporate, and healthcare uniforms designed for comfort and durability.
+              </p>
+              <Button
+                size="lg"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-primary/30 transition-all duration-300 transform hover:scale-105 px-10 py-4 text-lg"
+                asChild
+              >
+                <Link href="/products" className="flex items-center">
+                  Shop All Collections <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
         </section>
 
 
@@ -220,3 +199,4 @@ export default function HomePage() {
 
 // Helper cn function if not globally available
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
+
