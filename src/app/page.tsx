@@ -115,10 +115,10 @@ export default function HomePage() {
           <LogoMarquee />
         </section>
 
-        <section className="py-12 md:py-24 bg-muted/30">
+        <section className="py-10 md:py-24 bg-muted/30">
           <div className="container mx-auto px-4 md:px-6">
             <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-4">Why <span className="text-primary">UniShop</span>?</h2>
-            <p className="text-lg text-muted-foreground text-center mb-12 md:mb-16 max-w-2xl mx-auto">Your trusted partner for quality, convenience, and community.</p>
+            <p className="text-lg text-muted-foreground text-center mb-10 md:mb-16 max-w-2xl mx-auto">Your trusted partner for quality, convenience, and community.</p>
             <div className="grid md:grid-cols-3 gap-8 md:gap-10 text-center">
               {[
                 { icon: ShoppingBag, title: "Quality First", description: "Durable materials and comfortable designs that last." },
@@ -137,13 +137,13 @@ export default function HomePage() {
 
         {/* Categories Section - New Alternating Full-Width Layout */}
         <section className="bg-background">
-          <div className="container mx-auto px-4 md:px-6 py-12 md:py-24">
-            <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-12 md:mb-16">Our Uniform Categories</h2>
+          <div className="container mx-auto px-4 md:px-6 py-10 md:py-24">
+            <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-10 md:mb-16">Our Uniform Categories</h2>
             
             {schoolCategory && (
-              <div className="mb-12 md:mb-24 group">
+              <div className="mb-10 md:mb-24 group">
                 <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                  <div className="relative aspect-[4/3] md:aspect-auto md:h-[450px] lg:h-[500px] rounded-lg overflow-hidden shadow-xl order-1">
+                  <div className="relative h-72 md:aspect-auto md:h-[450px] lg:h-[500px] rounded-lg overflow-hidden shadow-xl order-1">
                     <Image
                       src={schoolCategory.imageUrl}
                       alt={schoolCategory.name}
@@ -197,7 +197,7 @@ export default function HomePage() {
                       </Link>
                     </Button>
                   </div>
-                  <div className="relative aspect-[4/3] md:aspect-auto md:h-[450px] lg:h-[500px] rounded-lg overflow-hidden shadow-xl order-1 md:order-2">
+                  <div className="relative h-72 md:aspect-auto md:h-[450px] lg:h-[500px] rounded-lg overflow-hidden shadow-xl order-1 md:order-2">
                     <Image
                       src={collegeCategory.imageUrl}
                       alt={collegeCategory.name}
@@ -220,7 +220,7 @@ export default function HomePage() {
         
 
         {featuredProducts.length > 0 && (
-          <section className="py-12 md:py-24 bg-muted/30">
+          <section className="py-10 md:py-24 bg-muted/30">
             <div className="container mx-auto px-4 md:px-6">
               <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-12">Featured Uniforms</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
@@ -275,4 +275,5 @@ const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
     
 
     
+
 
