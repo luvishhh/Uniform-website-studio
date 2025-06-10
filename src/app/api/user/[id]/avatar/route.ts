@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
@@ -8,13 +9,15 @@ const isValidDataUrl = (s: string) => s.startsWith('data:image/') && s.includes(
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const userId = params.id;
+    // const userId = params.id; // Moved params access
+
+    const body = await request.json(); // First await (consuming request body)
+    const userId = params.id; // Access params after consuming request body
 
     if (!userId || !ObjectId.isValid(userId)) {
       return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
     }
 
-    const body = await request.json();
     const { avatarDataUrl } = body;
 
     if (!avatarDataUrl || typeof avatarDataUrl !== 'string') {

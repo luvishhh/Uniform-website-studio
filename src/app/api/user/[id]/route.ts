@@ -6,13 +6,19 @@ import type { User } from '@/types';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const userId = params.id;
+    // Moved params access after the first await
+    // const userId = params.id; 
+
+    // Example: If there was a request body read, it would be here
+    // await request.text(); // Or some other awaitable operation on request
+
+    const db = await connectToDatabase();
+    const userId = params.id; // Access params after the first relevant await
 
     if (!userId || !ObjectId.isValid(userId)) {
       return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
     }
 
-    const db = await connectToDatabase();
     const user = await db.collection<User>('users').findOne({ _id: new ObjectId(userId) });
 
     if (!user) {
@@ -33,6 +39,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json(finalUser, { status: 200 });
   } catch (error) {
     console.error('Failed to fetch user:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return NextResponse.json({ message: `Internal server error: ${errorMessage}` }, { status: 500 });
   }
 }
+
