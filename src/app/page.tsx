@@ -115,10 +115,10 @@ export default function HomePage() {
           <LogoMarquee />
         </section>
 
-        <section className="py-16 md:py-24 bg-muted/30">
+        <section className="py-12 md:py-24 bg-muted/30">
           <div className="container mx-auto px-4 md:px-6">
             <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-4">Why <span className="text-primary">UniShop</span>?</h2>
-            <p className="text-lg text-muted-foreground text-center mb-16 max-w-2xl mx-auto">Your trusted partner for quality, convenience, and community.</p>
+            <p className="text-lg text-muted-foreground text-center mb-12 md:mb-16 max-w-2xl mx-auto">Your trusted partner for quality, convenience, and community.</p>
             <div className="grid md:grid-cols-3 gap-8 md:gap-10 text-center">
               {[
                 { icon: ShoppingBag, title: "Quality First", description: "Durable materials and comfortable designs that last." },
@@ -137,11 +137,11 @@ export default function HomePage() {
 
         {/* Categories Section - New Alternating Full-Width Layout */}
         <section className="bg-background">
-          <div className="container mx-auto px-4 md:px-6 py-16 md:py-24">
-            <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-16">Our Uniform Categories</h2>
+          <div className="container mx-auto px-4 md:px-6 py-12 md:py-24">
+            <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-12 md:mb-16">Our Uniform Categories</h2>
             
             {schoolCategory && (
-              <div className="mb-16 md:mb-24 group">
+              <div className="mb-12 md:mb-24 group">
                 <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                   <div className="relative aspect-[4/3] md:aspect-auto md:h-[450px] lg:h-[500px] rounded-lg overflow-hidden shadow-xl order-1">
                     <Image
@@ -154,7 +154,7 @@ export default function HomePage() {
                     />
                      <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent md:bg-gradient-to-t md:from-black/30 md:via-transparent md:to-transparent opacity-50 group-hover:opacity-70 transition-opacity"></div>
                   </div>
-                  <div className="flex flex-col justify-center items-start order-2 text-left md:pl-8">
+                  <div className="flex flex-col justify-center items-center md:items-start order-2 text-center md:text-left md:pl-8 mt-6 md:mt-0">
                     <h3 className="text-3xl lg:text-4xl font-bold font-headline text-foreground group-hover:text-primary transition-colors mb-4">
                       {schoolCategory.name} Uniforms
                     </h3>
@@ -179,7 +179,7 @@ export default function HomePage() {
             {collegeCategory && (
               <div className="group">
                 <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                  <div className="flex flex-col justify-center items-start order-2 md:order-1 text-left md:pr-8">
+                  <div className="flex flex-col justify-center items-center md:items-start order-2 md:order-1 text-center md:text-left md:pr-8 mt-6 md:mt-0">
                     <h3 className="text-3xl lg:text-4xl font-bold font-headline text-foreground group-hover:text-primary transition-colors mb-4">
                       {collegeCategory.name} Uniforms
                     </h3>
@@ -220,7 +220,7 @@ export default function HomePage() {
         
 
         {featuredProducts.length > 0 && (
-          <section className="py-16 md:py-24 bg-muted/30">
+          <section className="py-12 md:py-24 bg-muted/30">
             <div className="container mx-auto px-4 md:px-6">
               <h2 className="text-4xl md:text-5xl font-bold font-headline text-center mb-12">Featured Uniforms</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
@@ -228,7 +228,7 @@ export default function HomePage() {
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
-              <div className="text-center mt-16">
+              <div className="text-center mt-12 md:mt-16">
                 <Button 
                   variant="outline" 
                   size="lg" 
@@ -275,3 +275,4 @@ const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
     
 
     
+
