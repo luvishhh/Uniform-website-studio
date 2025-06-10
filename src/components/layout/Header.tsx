@@ -4,16 +4,16 @@
 import Link from 'next/link';
 import Logo from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlus, LogInIcon, LogOutIcon, Briefcase, Building, GraduationCap, Home, ShoppingBag, Gift, X, Settings, Package } from 'lucide-react';
+import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlus, LogInIcon, LogOutIcon, Briefcase, Building, GraduationCap, Home, ShoppingBag, Gift, X, Settings, Package, LayoutDashboard } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -30,11 +30,11 @@ export default function Header() {
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); 
+  const [isLoading, setIsLoading] = useState(false);
 
   const checkAuthState = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -49,30 +49,31 @@ export default function Header() {
         setIsLoggedIn(false);
         setCurrentUserRole(null);
         setCurrentUserName(null);
-        // Ensure all related localStorage items are cleared for consistency
         localStorage.removeItem('unishop_user_role');
         localStorage.removeItem('unishop_user_displayName');
         localStorage.removeItem('unishop_user_id');
-        localStorage.removeItem('isAdminLoggedIn'); 
+        localStorage.removeItem('isAdminLoggedIn');
       }
     }
   }, []);
 
   useEffect(() => {
-    setIsClient(true); 
+    setIsClient(true);
   }, []);
 
   useEffect(() => {
     if (isClient) {
-      checkAuthState(); // Initial check
+      checkAuthState();
       window.addEventListener('authChange', checkAuthState);
+      // Also re-check on pathname change for SPA navigations that might affect state indirectly
+      if (pathname) checkAuthState();
     }
     return () => {
       if (isClient && typeof window !== "undefined") {
         window.removeEventListener('authChange', checkAuthState);
       }
     };
-  }, [isClient, pathname, checkAuthState]); 
+  }, [isClient, pathname, checkAuthState]);
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -94,25 +95,25 @@ export default function Header() {
           localStorage.removeItem('unishop_user_role');
           localStorage.removeItem('unishop_user_displayName');
           localStorage.removeItem('unishop_user_id');
-          localStorage.removeItem('isAdminLoggedIn'); 
-          window.dispatchEvent(new CustomEvent('authChange')); // Dispatch event
+          localStorage.removeItem('isAdminLoggedIn');
+          window.dispatchEvent(new CustomEvent('authChange'));
       }
       setIsLoading(false);
       if (isMobileMenuOpen) setIsMobileMenuOpen(false);
-      router.push('/'); 
-      router.refresh(); 
+      router.push('/');
+      router.refresh();
     }
   };
 
   const NavLinkItem = ({ href, label, isActive, onClick, icon: Icon, className }: { href: string; label: string; isActive: boolean; onClick?: () => void; icon?: React.ElementType, className?:string }) => (
     <Link href={href} passHref>
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className={cn(
           "text-sm font-medium h-auto py-2 px-3",
           isActive ? 'text-primary bg-primary/10' : 'text-foreground/80 hover:text-primary hover:bg-primary/5',
           className
-        )} 
+        )}
         onClick={onClick}
       >
         {Icon && <Icon className="mr-2 h-4 w-4 shrink-0" />}
@@ -125,14 +126,14 @@ export default function Header() {
     const handleLinkClick = () => {
       if (isMobile) setIsMobileMenuOpen(false);
     };
-    
+
     const mobileClass = isMobile ? "w-full justify-start text-base py-3 px-4" : "";
 
     let linksToRender = navLinks.map((link) => (
-      <NavLinkItem 
-        key={link.href} 
-        href={link.href} 
-        label={link.label} 
+      <NavLinkItem
+        key={link.href}
+        href={link.href}
+        label={link.label}
         icon={link.icon}
         isActive={pathname === link.href || (link.href === '/products' && pathname.startsWith('/products'))}
         onClick={handleLinkClick}
@@ -140,23 +141,37 @@ export default function Header() {
       />
     ));
 
-    if (isLoggedIn && currentUserRole === 'admin') {
-      linksToRender.push(
-        <NavLinkItem 
-          key="/admin/dashboard" 
-          href="/admin/dashboard" 
-          label="Admin Panel" 
-          icon={ShieldCheck}
-          isActive={pathname.startsWith('/admin')}
-          onClick={handleLinkClick}
-          className={mobileClass}
-        />
-      );
+    if (isLoggedIn) {
+      if (currentUserRole === 'admin') {
+        linksToRender.push(
+          <NavLinkItem
+            key="/admin/dashboard"
+            href="/admin/dashboard"
+            label="Admin Panel"
+            icon={ShieldCheck}
+            isActive={pathname.startsWith('/admin')}
+            onClick={handleLinkClick}
+            className={mobileClass}
+          />
+        );
+      } else if (currentUserRole === 'institution') {
+        linksToRender.push(
+          <NavLinkItem
+            key="/institution/dashboard"
+            href="/institution/dashboard"
+            label="Institution Hub"
+            icon={LayoutDashboard} // Or Building icon
+            isActive={pathname.startsWith('/institution')}
+            onClick={handleLinkClick}
+            className={mobileClass}
+          />
+        );
+      }
     }
     return linksToRender;
   };
-  
-  if (!isClient) { 
+
+  if (!isClient) {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
@@ -175,18 +190,20 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         <Logo />
-        
+
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-1">
           {renderNavLinks()}
         </nav>
 
         <div className="flex items-center space-x-2 md:space-x-3">
-          <Link href="/cart" passHref>
-            <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-            </Button>
-          </Link>
-          
+         {currentUserRole !== 'institution' && (
+            <Link href="/cart" passHref>
+              <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
+
           {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -211,16 +228,27 @@ export default function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center gap-2 py-2"><UserIcon className="h-4 w-4 text-muted-foreground"/> My Profile</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center gap-2 py-2"><Package className="h-4 w-4 text-muted-foreground"/> Order History</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center gap-2 py-2"><Settings className="h-4 w-4 text-muted-foreground"/> Account Settings</Link>
-                </DropdownMenuItem>
+
                 {currentUserRole === 'admin' && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin/dashboard" className="flex items-center gap-2 py-2"><ShieldCheck className="h-4 w-4 text-muted-foreground"/>Admin Panel</Link>
                   </DropdownMenuItem>
+                )}
+                {currentUserRole === 'institution' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/institution/dashboard" className="flex items-center gap-2 py-2"><LayoutDashboard className="h-4 w-4 text-muted-foreground"/>Institution Dashboard</Link>
+                  </DropdownMenuItem>
+                )}
+
+                {(currentUserRole !== 'admin' && currentUserRole !== 'institution') && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" onClick={() => router.push('/profile?tab=orders')} className="flex items-center gap-2 py-2"><Package className="h-4 w-4 text-muted-foreground"/> Order History</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" onClick={() => router.push('/profile?tab=settings')} className="flex items-center gap-2 py-2"><Settings className="h-4 w-4 text-muted-foreground"/> Account Settings</Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} disabled={isLoading} className="text-destructive focus:bg-destructive/10 focus:text-destructive flex items-center gap-2 py-2 cursor-pointer">
@@ -247,7 +275,7 @@ export default function Header() {
               </DropdownMenu>
             </div>
           )}
-          
+
           <div className="md:hidden">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -277,12 +305,23 @@ export default function Header() {
                       <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile'); }}>
                         <Link href="/profile"><UserIcon className="mr-2 h-5 w-5"/> My Profile</Link>
                       </Button>
-                      <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile'); }}>
-                        <Link href="/profile"><Package className="mr-2 h-5 w-5"/> Order History</Link>
-                      </Button>
-                       <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile'); }}>
-                        <Link href="/profile"><Settings className="mr-2 h-5 w-5"/> Account Settings</Link>
-                      </Button>
+
+                      {currentUserRole === 'institution' && (
+                         <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/institution/dashboard'); }}>
+                           <Link href="/institution/dashboard"><LayoutDashboard className="mr-2 h-5 w-5"/> Institution Dashboard</Link>
+                         </Button>
+                      )}
+
+                      {(currentUserRole !== 'admin' && currentUserRole !== 'institution') && (
+                        <>
+                          <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile?tab=orders'); }}>
+                            <Link href="/profile?tab=orders"><Package className="mr-2 h-5 w-5"/> Order History</Link>
+                          </Button>
+                          <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile?tab=settings'); }}>
+                            <Link href="/profile?tab=settings"><Settings className="mr-2 h-5 w-5"/> Account Settings</Link>
+                          </Button>
+                        </>
+                      )}
                       <Button className="w-full justify-start text-base py-3 px-4 text-destructive hover:text-destructive" variant="ghost" onClick={handleLogout} disabled={isLoading}>
                         <LogOutIcon className="mr-2 h-5 w-5"/> {isLoading ? "Logging out..." : "Logout"}
                       </Button>
@@ -318,3 +357,4 @@ export default function Header() {
 
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
 
+    

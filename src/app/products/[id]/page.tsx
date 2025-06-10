@@ -1,4 +1,5 @@
 
+"use client";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -10,9 +11,27 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, ArrowLeft, Star, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import React, { useEffect, useState } from "react"; // Added React and hooks
+
+// Dummy Label component for Select
+const Label = ({htmlFor, children, className}: {htmlFor: string, children: React.ReactNode, className?:string}) => (
+  <label htmlFor={htmlFor} className={cn("block text-sm font-medium text-foreground", className)}>{children}</label>
+);
+// Helper cn function if not globally available (though it should be from lib/utils)
+const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const product = getProductById(params.id);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== "undefined") {
+        setCurrentUserRole(localStorage.getItem('unishop_user_role'));
+    }
+  }, []);
+
 
   if (!product) {
     return (
@@ -32,6 +51,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   }
 
   const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const canPurchase = isClient && currentUserRole !== 'institution';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -63,7 +83,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             <div className="grid grid-cols-4 gap-2">
               {[1,2,3,4].map(i => (
                 <div key={i} className="aspect-square relative w-full rounded-md overflow-hidden border hover:border-primary cursor-pointer">
-                   <Image src={`https://placehold.co/100x100.png?text=Thumb${i}`} alt={`Thumbnail ${i}`} layout="fill" objectFit="cover" data-ai-hint="uniform detail" />
+                   <Image src={`https://placehold.co/100x100.png?text=Thumb${i}`} alt={`Thumbnail ${i}`} fill objectFit="cover" data-ai-hint="uniform detail" />
                 </div>
               ))}
             </div>
@@ -72,7 +92,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           {/* Product Details */}
           <div className="space-y-6">
             <h1 className="text-3xl md:text-4xl font-bold font-headline">{product.name}</h1>
-            
+
             <div className="flex items-center space-x-2">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
@@ -83,9 +103,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
 
             <p className="text-3xl font-semibold text-primary">${product.price.toFixed(2)}</p>
-            
-            {/* Removed stock badge */}
-            
+
             <Separator />
 
             <div>
@@ -98,11 +116,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             )}
             <p className="text-sm"><span className="font-medium">Category:</span> <Link href={`/products?category=${product.category.toLowerCase()}`} className="text-primary hover:underline">{product.category}</Link></p>
 
-            {/* Size Selector */}
             {product.sizes && product.sizes.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="size-select" className="text-sm font-medium">Size:</Label>
-                <Select>
+                <Select disabled={!canPurchase}>
                   <SelectTrigger id="size-select" className="w-full md:w-1/2">
                     <SelectValue placeholder="Select size" />
                   </SelectTrigger>
@@ -115,11 +132,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               </div>
             )}
 
-            {/* Color Selector (if available) */}
             {product.colors && product.colors.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="color-select" className="text-sm font-medium">Color:</Label>
-                <Select>
+                <Select disabled={!canPurchase}>
                   <SelectTrigger id="color-select" className="w-full md:w-1/2">
                     <SelectValue placeholder="Select color" />
                   </SelectTrigger>
@@ -131,11 +147,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 </Select>
               </div>
             )}
-            
-            {/* Quantity (mock) */}
+
             <div className="space-y-2">
                 <Label htmlFor="quantity-select" className="text-sm font-medium">Quantity:</Label>
-                <Select defaultValue="1">
+                <Select defaultValue="1" disabled={!canPurchase}>
                   <SelectTrigger id="quantity-select" className="w-full md:w-1/2">
                     <SelectValue />
                   </SelectTrigger>
@@ -147,19 +162,22 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 </Select>
             </div>
 
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button size="lg" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"> {/* Removed disabled={product.stock === 0} */}
-                <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
-              </Button>
-              <Button size="lg" variant="outline" className="flex-1"> {/* Removed disabled={product.stock === 0} */}
-                Buy Now
-              </Button>
-            </div>
+            {canPurchase && (
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button size="lg" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
+                </Button>
+                <Button size="lg" variant="outline" className="flex-1">
+                  Buy Now
+                </Button>
+              </div>
+            )}
+             {!canPurchase && isClient && (
+                <Badge variant="outline" className="mt-4 p-2 text-sm">Purchasing not available for institution accounts.</Badge>
+            )}
           </div>
         </div>
 
-        {/* Related Products Section */}
         {relatedProducts.length > 0 && (
           <section className="mt-16 pt-12 border-t">
             <h2 className="text-2xl font-bold font-headline text-center mb-8">Related Products</h2>
@@ -170,8 +188,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
           </section>
         )}
-        
-        {/* Reviews Section (Placeholder) */}
+
         <section className="mt-16 pt-12 border-t">
           <h2 className="text-2xl font-bold font-headline mb-6">Customer Reviews</h2>
           <div className="space-y-6">
@@ -202,9 +219,4 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   );
 }
 
-// Dummy Label component for Select
-const Label = ({htmlFor, children, className}: {htmlFor: string, children: React.ReactNode, className?:string}) => (
-  <label htmlFor={htmlFor} className={cn("block text-sm font-medium text-foreground", className)}>{children}</label>
-);
-// Helper cn function if not globally available (though it should be from lib/utils)
-const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
+    

@@ -8,11 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { User, StudentUser, Order, InstitutionUser, DealerUser, AdminUser } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent } from "@/components/ui/tabs"; // Tabs is still needed for TabsContent
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Package, UserCircle, Settings, LogOut, Edit3, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -20,13 +20,17 @@ import { Badge } from "@/components/ui/badge";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
+  
+  const initialTab = searchParams.get('tab') || "details";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
   const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
@@ -69,16 +73,20 @@ export default function ProfilePage() {
         setCurrentUser(userData);
         setAvatarUrl(userData.imageUrl || `https://placehold.co/100x100.png?text=${getInitials(getUserDisplayName(userData))}`);
 
-        const ordersRes = await fetch(`/api/orders/user/${storedUserId}`);
-        if (!ordersRes.ok) {
-          if (ordersRes.status !== 404) { // 404 is acceptable (no orders)
-            const errorData = await ordersRes.json();
-            throw new Error(errorData.message || 'Failed to fetch orders');
-          }
-          setUserOrders([]);
+        if (userData.role !== 'institution') { // Institutions don't have orders in this model
+            const ordersRes = await fetch(`/api/orders/user/${storedUserId}`);
+            if (!ordersRes.ok) {
+            if (ordersRes.status !== 404) {
+                const errorData = await ordersRes.json();
+                throw new Error(errorData.message || 'Failed to fetch orders');
+            }
+            setUserOrders([]);
+            } else {
+            const ordersData: Order[] = await ordersRes.json();
+            setUserOrders(ordersData);
+            }
         } else {
-          const ordersData: Order[] = await ordersRes.json();
-          setUserOrders(ordersData);
+            setUserOrders([]); // Institutions have no orders
         }
 
       } catch (error: any) {
@@ -95,6 +103,13 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchProfileData();
   }, [fetchProfileData]);
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, activeTab]);
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +146,6 @@ export default function ProfilePage() {
         throw new Error(result.message || "Failed to update avatar");
       }
     } catch (error: any) {
-      // This is the corrected client-side error handling
       console.error('Failed to update avatar:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({ title: "Avatar Update Failed", description: errorMessage, variant: "destructive" });
@@ -233,14 +247,16 @@ export default function ProfilePage() {
                 >
                   <UserCircle className="mr-2 h-4 w-4"/> Personal Details
                 </Button>
-                <Button
-                  variant={activeTab === "orders" ? "secondary" : "ghost"}
-                  onClick={() => setActiveTab("orders")}
-                  className="w-full justify-start py-2.5 font-normal data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold"
-                  data-active={activeTab === "orders"}
-                >
-                  <Package className="mr-2 h-4 w-4"/> Order History
-                </Button>
+                {currentUser.role !== 'institution' && (
+                  <Button
+                    variant={activeTab === "orders" ? "secondary" : "ghost"}
+                    onClick={() => setActiveTab("orders")}
+                    className="w-full justify-start py-2.5 font-normal data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold"
+                    data-active={activeTab === "orders"}
+                  >
+                    <Package className="mr-2 h-4 w-4"/> Order History
+                  </Button>
+                )}
                 <Button
                   variant={activeTab === "settings" ? "secondary" : "ghost"}
                   onClick={() => setActiveTab("settings")}
@@ -259,7 +275,6 @@ export default function ProfilePage() {
 
           <div className="flex-1">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              {/* Hidden TabsList is removed */}
               <TabsContent value="details">
                 <Card className="shadow-lg">
                   <CardHeader>
@@ -311,77 +326,79 @@ export default function ProfilePage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="orders">
-                <Card className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="font-headline text-2xl">Order History</CardTitle>
-                    <CardDescription>View your past orders and their status.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {userOrders.length > 0 ? userOrders.map((order, orderIdx) => (
-                      <Card key={order.id} className="p-4 shadow-sm border">
-                        <div className="flex flex-col sm:flex-row justify-between items-start mb-3">
-                          <div>
-                            <h4 className="font-semibold text-lg">Order ID: <span className="font-mono text-primary">#{order.id.substring(0,8)}...</span></h4>
-                            <p className="text-xs text-muted-foreground">Date: {new Date(order.orderDate).toLocaleDateString()}</p>
-                          </div>
-                           <Badge
-                              variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'secondary'}
-                              className={`capitalize text-xs mt-2 sm:mt-0 ${order.status === 'Delivered' ? 'bg-green-600 text-white' : order.status === 'Shipped' ? 'bg-blue-500 text-white' : ''}`}
-                            >
-                              {order.status}
-                            </Badge>
-                        </div>
-
-                        <div className="mb-3">
-                          <h5 className="text-sm font-medium mb-1">Items:</h5>
-                          <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
-                            {order.items.map(item => (
-                              <li key={item.productId + (item.size || '') + (item.color || '')}>
-                                {item.name} (Qty: {item.quantity}{item.size ? `, Size: ${item.size}` : ''}{item.color ? `, Color: ${item.color}` : ''}) - ${item.price.toFixed(2)} each
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <p className="text-sm font-semibold text-right">Total: ${order.totalAmount.toFixed(2)}</p>
-
-                        {orderIdx === 0 && order.status !== 'Cancelled' && (
-                            <div className="mt-4 pt-4 border-t">
-                                <h5 className="text-sm font-medium mb-3 text-center">Order Progress</h5>
-                                <div className="flex items-center space-x-2 md:space-x-4 overflow-x-auto pb-2">
-                                    {orderStatuses.map((statusStep, index, arr) => {
-                                        const currentStatusIndex = orderStatuses.indexOf(order.status);
-                                        const isCompleted = currentStatusIndex >= index;
-                                        const isActive = currentStatusIndex === index;
-                                        return (
-                                        <React.Fragment key={statusStep}>
-                                            <div className="flex flex-col items-center text-center flex-shrink-0 w-20">
-                                            <div
-                                                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs
-                                                ${isCompleted ? 'bg-primary border-primary text-primary-foreground' : 'bg-muted border-border text-muted-foreground'}
-                                                ${isActive ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-                                            >
-                                                {isCompleted ? <Package className="h-4 w-4" /> : index + 1}
-                                            </div>
-                                            <p className={`text-xs mt-1.5 ${isActive ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>{statusStep}</p>
-                                            </div>
-                                            {index < arr.length - 1 && <div className={`flex-1 h-1 min-w-[20px] ${isCompleted && currentStatusIndex > index ? 'bg-primary' : 'bg-border'}`}></div>}
-                                        </React.Fragment>
-                                        )
-                                    })}
-                                </div>
+              {currentUser.role !== 'institution' && (
+                <TabsContent value="orders">
+                  <Card className="shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="font-headline text-2xl">Order History</CardTitle>
+                      <CardDescription>View your past orders and their status.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {userOrders.length > 0 ? userOrders.map((order, orderIdx) => (
+                        <Card key={order.id} className="p-4 shadow-sm border">
+                          <div className="flex flex-col sm:flex-row justify-between items-start mb-3">
+                            <div>
+                              <h4 className="font-semibold text-lg">Order ID: <span className="font-mono text-primary">#{order.id.substring(0,8)}...</span></h4>
+                              <p className="text-xs text-muted-foreground">Date: {new Date(order.orderDate).toLocaleDateString()}</p>
                             </div>
-                        )}
-                        <div className="mt-4 flex justify-end">
-                             <Button variant="outline" size="sm">Track Order (Mock)</Button>
-                        </div>
-                      </Card>
-                    )) : (
-                      <p className="text-sm text-muted-foreground text-center py-8">You have no past orders.</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                            <Badge
+                                variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'secondary'}
+                                className={`capitalize text-xs mt-2 sm:mt-0 ${order.status === 'Delivered' ? 'bg-green-600 text-white' : order.status === 'Shipped' ? 'bg-blue-500 text-white' : ''}`}
+                              >
+                                {order.status}
+                              </Badge>
+                          </div>
+
+                          <div className="mb-3">
+                            <h5 className="text-sm font-medium mb-1">Items:</h5>
+                            <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
+                              {order.items.map(item => (
+                                <li key={item.productId + (item.size || '') + (item.color || '')}>
+                                  {item.name} (Qty: {item.quantity}{item.size ? `, Size: ${item.size}` : ''}{item.color ? `, Color: ${item.color}` : ''}) - ${item.price.toFixed(2)} each
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <p className="text-sm font-semibold text-right">Total: ${order.totalAmount.toFixed(2)}</p>
+
+                          {orderIdx === 0 && order.status !== 'Cancelled' && (
+                              <div className="mt-4 pt-4 border-t">
+                                  <h5 className="text-sm font-medium mb-3 text-center">Order Progress</h5>
+                                  <div className="flex items-center space-x-2 md:space-x-4 overflow-x-auto pb-2">
+                                      {orderStatuses.map((statusStep, index, arr) => {
+                                          const currentStatusIndex = orderStatuses.indexOf(order.status);
+                                          const isCompleted = currentStatusIndex >= index;
+                                          const isActive = currentStatusIndex === index;
+                                          return (
+                                          <React.Fragment key={statusStep}>
+                                              <div className="flex flex-col items-center text-center flex-shrink-0 w-20">
+                                              <div
+                                                  className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs
+                                                  ${isCompleted ? 'bg-primary border-primary text-primary-foreground' : 'bg-muted border-border text-muted-foreground'}
+                                                  ${isActive ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                                              >
+                                                  {isCompleted ? <Package className="h-4 w-4" /> : index + 1}
+                                              </div>
+                                              <p className={`text-xs mt-1.5 ${isActive ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>{statusStep}</p>
+                                              </div>
+                                              {index < arr.length - 1 && <div className={`flex-1 h-1 min-w-[20px] ${isCompleted && currentStatusIndex > index ? 'bg-primary' : 'bg-border'}`}></div>}
+                                          </React.Fragment>
+                                          )
+                                      })}
+                                  </div>
+                              </div>
+                          )}
+                          <div className="mt-4 flex justify-end">
+                              <Button variant="outline" size="sm">Track Order (Mock)</Button>
+                          </div>
+                        </Card>
+                      )) : (
+                        <p className="text-sm text-muted-foreground text-center py-8">You have no past orders.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
 
               <TabsContent value="settings">
                 <Card className="shadow-lg">

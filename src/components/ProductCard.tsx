@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, ShoppingCart, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import React, { useEffect, useState } from "react"; // Added React and hooks
 
 interface ProductCardProps {
   product: Product;
@@ -16,6 +17,18 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, isAdminView = false }: ProductCardProps) {
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== "undefined") {
+        setCurrentUserRole(localStorage.getItem('unishop_user_role'));
+    }
+  }, []);
+
+  const canPurchase = isClient && currentUserRole !== 'institution';
+
   return (
     <Card className="overflow-hidden h-full flex flex-col group bg-card shadow-lg hover:shadow-xl focus-within:shadow-xl transition-all duration-300 ease-in-out rounded-xl border border-border/30 hover:border-primary/60 focus-within:border-primary/60 relative">
       <Link href={`/products/${product.id}`} className="block focus:outline-none" aria-label={`View details for ${product.name}`}>
@@ -33,7 +46,6 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
               FEATURED
             </Badge>
           )}
-           {/* Overlay for action buttons on hover, not for admin view */}
           {!isAdminView && (
              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
                 <Button
@@ -41,7 +53,7 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
                     size="sm"
                     className="bg-background/80 hover:bg-background text-foreground border-border backdrop-blur-sm"
                     asChild
-                    onClick={(e) => e.stopPropagation()} // Prevent link navigation if button itself is clicked
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <Link href={`/products/${product.id}`}>
                         <Eye className="mr-2 h-4 w-4" /> View Details
@@ -52,7 +64,7 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
         </div>
       </Link>
 
-      <CardContent className="px-4 py-3 flex-grow flex flex-col"> {/* Adjusted padding here */}
+      <CardContent className="px-4 py-3 flex-grow flex flex-col">
         <div className="flex-grow mb-2">
           {product.institution && (
             <p className="text-xs text-muted-foreground mb-1 tracking-wide uppercase">
@@ -66,15 +78,20 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
           </Link>
           <p className="text-sm text-muted-foreground capitalize mt-0.5">{product.category} &bull; {product.gender}</p>
         </div>
-        
-        <div className="flex items-center justify-center mt-auto"> {/* Price removed, adjusted justify to center */}
+
+        <div className={cn("flex items-center justify-between mt-auto", { "justify-center": isAdminView || !canPurchase })}>
           {!isAdminView && (
-            <Button 
+            <p className="text-xl font-semibold text-primary group-hover:text-accent transition-colors">
+              ${product.price.toFixed(2)}
+            </p>
+          )}
+          {!isAdminView && canPurchase && (
+            <Button
               size="sm"
               variant="default"
               className="bg-primary hover:bg-primary/90 group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300"
               onClick={(e) => {
-                e.stopPropagation(); 
+                e.stopPropagation();
                 alert(`Added ${product.name} to cart (mock)`);
               }}
               aria-label={`Add ${product.name} to cart`}
@@ -104,3 +121,4 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
   );
 }
 
+    
