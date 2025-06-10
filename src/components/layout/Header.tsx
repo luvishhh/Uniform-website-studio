@@ -37,45 +37,37 @@ export default function Header() {
   const [isLoading, setIsLoading] = useState(false); 
 
   useEffect(() => {
-    setIsClient(true);
+    setIsClient(true); // Ensures localStorage is only accessed client-side
     if (typeof window !== "undefined") {
-      const cookieStore = document.cookie;
-      const tokenPresent = cookieStore.split(';').some((item) => item.trim().startsWith('unishop_auth_token='));
       const storedUserRole = localStorage.getItem('unishop_user_role');
       const storedUserName = localStorage.getItem('unishop_user_displayName');
-      const isAdminLoggedInFlag = localStorage.getItem('isAdminLoggedIn') === 'true'; // For legacy admin login
+      // const storedUserId = localStorage.getItem('unishop_user_id'); // User ID is also set by login page
 
-      if (tokenPresent && storedUserRole && storedUserName) {
+      // If role and name are in localStorage, consider the user logged in for UI purposes.
+      // The actual session validity is managed by the HttpOnly cookie on the server.
+      if (storedUserRole && storedUserName) {
         setIsLoggedIn(true);
         setCurrentUserRole(storedUserRole);
         setCurrentUserName(storedUserName);
-      } else if (isAdminLoggedInFlag && storedUserRole === 'admin') { // Handle legacy admin login
-        setIsLoggedIn(true);
-        setCurrentUserRole('admin');
-        setCurrentUserName(storedUserName || 'Admin');
-      }
-      else {
+      } else {
+        // If essential localStorage items are missing, treat as logged out.
+        // And ensure all related items are cleared for consistency.
         setIsLoggedIn(false);
         setCurrentUserRole(null);
         setCurrentUserName(null);
-        // If token isn't present but local storage items are, clear them for consistency
-        if(!tokenPresent && (storedUserRole || storedUserName)) {
-            localStorage.removeItem('unishop_user_role');
-            localStorage.removeItem('unishop_user_displayName');
-            localStorage.removeItem('unishop_user_id');
-        }
+        localStorage.removeItem('unishop_user_role');
+        localStorage.removeItem('unishop_user_displayName');
+        localStorage.removeItem('unishop_user_id');
+        localStorage.removeItem('isAdminLoggedIn'); // Clear legacy admin flag too
       }
     }
-  }, [pathname]); // Re-evaluate on pathname change
+  }, [pathname]); // Re-evaluate on pathname change. router.refresh() from login should trigger this.
 
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/logout', { method: 'POST' });
-      if (!response.ok) {
-        // Even if API call fails, proceed to clear client-side state for better UX
-        console.error("Logout API call failed, status:", response.status);
-      }
+      await fetch('/api/auth/logout', { method: 'POST' });
+      // No need to check response.ok for logout, just proceed with client-side cleanup
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
@@ -309,3 +301,4 @@ export default function Header() {
 }
 
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
+
