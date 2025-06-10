@@ -8,16 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { User, StudentUser, Order, InstitutionUser, DealerUser, AdminUser } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // TabsList & TabsTrigger no longer used directly in visible JSX
-import { Package, UserCircle, Settings, LogOut, Edit3, UploadCloud, X } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs"; // Tabs is still needed for TabsContent
+import { Package, UserCircle, Settings, LogOut, Edit3, UploadCloud } from "lucide-react";
 import Link from "next/link";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -27,9 +26,33 @@ export default function ProfilePage() {
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("details"); 
-  const [newAvatarUrl, setNewAvatarUrl] = useState("");
+  const [activeTab, setActiveTab] = useState("details");
+  const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getInitials = (name: string = "") => {
+    if (!name) return "U";
+    const names = name.split(' ');
+    return names.map(n => n[0]).join('').toUpperCase();
+  };
+
+  const getUserDisplayName = (user: User | null): string => {
+    if (!user) return "User";
+    switch (user.role) {
+      case 'student': return (user as StudentUser).fullName || "Student";
+      case 'institution': return (user as InstitutionUser).institutionName || "Institution";
+      case 'dealer': return (user as DealerUser).dealerName || "Dealer";
+      case 'admin': return (user as AdminUser).email || "Admin";
+      default: return user.email || user.id;
+    }
+  };
+
+  const getUserIdentifier = (user: User | null): string => {
+    if (!user) return "";
+    return user.email || (user as StudentUser).rollNumber || "";
+  }
 
   const fetchProfileData = useCallback(async () => {
     setIsLoading(true);
@@ -45,11 +68,10 @@ export default function ProfilePage() {
         const userData: User = await userRes.json();
         setCurrentUser(userData);
         setAvatarUrl(userData.imageUrl || `https://placehold.co/100x100.png?text=${getInitials(getUserDisplayName(userData))}`);
-        setNewAvatarUrl(userData.imageUrl || "");
 
         const ordersRes = await fetch(`/api/orders/user/${storedUserId}`);
         if (!ordersRes.ok) {
-          if (ordersRes.status !== 404) {
+          if (ordersRes.status !== 404) { // 404 is acceptable (no orders)
             const errorData = await ordersRes.json();
             throw new Error(errorData.message || 'Failed to fetch orders');
           }
@@ -74,39 +96,50 @@ export default function ProfilePage() {
     fetchProfileData();
   }, [fetchProfileData]);
 
-  const getInitials = (name: string = "") => {
-    if (!name) return "U";
-    const names = name.split(' ');
-    return names.map(n => n[0]).join('').toUpperCase();
-  };
 
-  const getUserDisplayName = (user: User | null): string => {
-    if (!user) return "User";
-    switch (user.role) {
-      case 'student': return (user as StudentUser).fullName || "Student";
-      case 'institution': return (user as InstitutionUser).institutionName || "Institution";
-      case 'dealer': return (user as DealerUser).dealerName || "Dealer";
-      case 'admin': return (user as AdminUser).email || "Admin";
-      default: return user.email || user.id;
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewAvatarUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
-  
-  const getUserIdentifier = (user: User | null): string => {
-    if (!user) return "";
-    return user.email || (user as StudentUser).rollNumber || "";
-  }
 
-  const handleAvatarUpdate = () => {
-    if (newAvatarUrl.trim()) {
-      setAvatarUrl(newAvatarUrl.trim());
-      if(currentUser) {
-        setCurrentUser({...currentUser, imageUrl: newAvatarUrl.trim() });
+  const handleAvatarUpdate = async () => {
+    if (!newAvatarUrl || !currentUser) {
+      toast({ title: "No Image Selected", description: "Please select an image file first.", variant: "destructive" });
+      return;
+    }
+    setIsUpdatingAvatar(true);
+    try {
+      const response = await fetch(`/api/user/${currentUser.id}/avatar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarDataUrl: newAvatarUrl }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setAvatarUrl(newAvatarUrl);
+        setCurrentUser(prev => prev ? { ...prev, imageUrl: newAvatarUrl } : null);
+        toast({ title: "Avatar Updated", description: "Your profile picture has been successfully updated." });
+        setIsAvatarDialogOpen(false);
+        setNewAvatarUrl(null);
+      } else {
+        throw new Error(result.message || "Failed to update avatar");
       }
-      toast({ title: "Avatar Updated (Mock)", description: "Your profile picture has been updated locally." });
+    } catch (error: any) {
+      // This is the corrected client-side error handling
+      console.error('Failed to update avatar:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast({ title: "Avatar Update Failed", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsUpdatingAvatar(false);
     }
-    setIsAvatarDialogOpen(false);
   };
-  
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -158,10 +191,9 @@ export default function ProfilePage() {
       </div>
     );
   }
-  
+
   const displayName = getUserDisplayName(currentUser);
   const displayIdentifier = getUserIdentifier(currentUser);
-
   const orderStatuses: Order['status'][] = ['Placed', 'Confirmed', 'Shipped', 'Delivered'];
 
   return (
@@ -172,15 +204,15 @@ export default function ProfilePage() {
           <Card className="md:w-1/4 lg:w-1/5 h-fit sticky top-24 shadow-lg">
             <CardHeader className="items-center text-center relative">
               <Avatar className="w-24 h-24 mb-4 border-4 border-primary shadow-md">
-                <AvatarImage src={avatarUrl} alt={displayName} data-ai-hint="profile avatar" />
+                <AvatarImage src={avatarUrl} alt={displayName} data-ai-hint="profile avatar"/>
                 <AvatarFallback className="text-3xl bg-muted">{getInitials(displayName)}</AvatarFallback>
               </Avatar>
-              <Button 
-                variant="outline" 
-                size="icon" 
+              <Button
+                variant="outline"
+                size="icon"
                 className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/70 hover:bg-background"
                 onClick={() => {
-                    setNewAvatarUrl(currentUser.imageUrl || "");
+                    setNewAvatarUrl(null);
                     setIsAvatarDialogOpen(true);
                 }}
                 title="Change profile picture"
@@ -227,7 +259,7 @@ export default function ProfilePage() {
 
           <div className="flex-1">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              {/* Removed the hidden TabsList as it might be causing issues */}
+              {/* Hidden TabsList is removed */}
               <TabsContent value="details">
                 <Card className="shadow-lg">
                   <CardHeader>
@@ -293,14 +325,14 @@ export default function ProfilePage() {
                             <h4 className="font-semibold text-lg">Order ID: <span className="font-mono text-primary">#{order.id.substring(0,8)}...</span></h4>
                             <p className="text-xs text-muted-foreground">Date: {new Date(order.orderDate).toLocaleDateString()}</p>
                           </div>
-                           <Badge 
+                           <Badge
                               variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'secondary'}
                               className={`capitalize text-xs mt-2 sm:mt-0 ${order.status === 'Delivered' ? 'bg-green-600 text-white' : order.status === 'Shipped' ? 'bg-blue-500 text-white' : ''}`}
                             >
                               {order.status}
                             </Badge>
                         </div>
-                        
+
                         <div className="mb-3">
                           <h5 className="text-sm font-medium mb-1">Items:</h5>
                           <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
@@ -312,7 +344,7 @@ export default function ProfilePage() {
                           </ul>
                         </div>
                         <p className="text-sm font-semibold text-right">Total: ${order.totalAmount.toFixed(2)}</p>
-                        
+
                         {orderIdx === 0 && order.status !== 'Cancelled' && (
                             <div className="mt-4 pt-4 border-t">
                                 <h5 className="text-sm font-medium mb-3 text-center">Order Progress</h5>
@@ -324,7 +356,7 @@ export default function ProfilePage() {
                                         return (
                                         <React.Fragment key={statusStep}>
                                             <div className="flex flex-col items-center text-center flex-shrink-0 w-20">
-                                            <div 
+                                            <div
                                                 className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs
                                                 ${isCompleted ? 'bg-primary border-primary text-primary-foreground' : 'bg-muted border-border text-muted-foreground'}
                                                 ${isActive ? 'ring-2 ring-primary ring-offset-2' : ''}`}
@@ -379,35 +411,37 @@ export default function ProfilePage() {
         </div>
       </main>
 
-      <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
+      <Dialog open={isAvatarDialogOpen} onOpenChange={(open) => { setIsAvatarDialogOpen(open); if(!open) setNewAvatarUrl(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-headline text-xl">Change Profile Picture</DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <Avatar className="w-32 h-32 mx-auto border-4 border-primary shadow-md">
-              <AvatarImage src={avatarUrl} alt={displayName} data-ai-hint="profile preview"/>
+              <AvatarImage src={newAvatarUrl || avatarUrl} alt={displayName} data-ai-hint="profile preview"/>
               <AvatarFallback className="text-4xl bg-muted">{getInitials(displayName)}</AvatarFallback>
             </Avatar>
             <div>
-              <Label htmlFor="avatarUrlInput" className="text-sm">Image URL</Label>
-              <Input 
-                id="avatarUrlInput" 
-                value={newAvatarUrl} 
-                onChange={(e) => setNewAvatarUrl(e.target.value)}
-                placeholder="https://example.com/image.png"
+              <Label htmlFor="avatarFileInput" className="text-sm">Choose an image file</Label>
+              <Input
+                id="avatarFileInput"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="mt-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
               />
-              <p className="text-xs text-muted-foreground mt-1">Paste a URL to your new avatar image.</p>
+              <p className="text-xs text-muted-foreground mt-1">Max file size: 2MB. Recommended formats: JPG, PNG.</p>
             </div>
           </div>
           <DialogFooter className="sm:justify-end gap-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" disabled={isUpdatingAvatar}>
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="button" onClick={handleAvatarUpdate}>
-              <UploadCloud className="mr-2 h-4 w-4" /> Update Avatar
+            <Button type="button" onClick={handleAvatarUpdate} disabled={isUpdatingAvatar || !newAvatarUrl}>
+              {isUpdatingAvatar ? "Updating..." : <><UploadCloud className="mr-2 h-4 w-4" /> Update Avatar</>}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -418,7 +452,8 @@ export default function ProfilePage() {
   );
 }
 
-// Dummy Label for settings tab, replace if actual form is built
 const Label = ({htmlFor, children, className}: {htmlFor?: string, children: React.ReactNode, className?:string}) => (
   <label htmlFor={htmlFor} className={`block text-sm font-medium text-foreground mb-1 ${className || ''}`}>{children}</label>
 );
+
+    
