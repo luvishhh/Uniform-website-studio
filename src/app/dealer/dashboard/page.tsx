@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { mockUsers, mockOrders, mockProducts, getUserById } from "@/lib/mockData";
 import type { DealerUser, Order, Product } from "@/types";
-import { Briefcase, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as PieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive, TrendingUp, UserCheck, Clock, Download, Building } from "lucide-react";
+import { Briefcase, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as PieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive, TrendingUp, UserCheck, Clock, Download, Building, Eye } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -379,6 +379,7 @@ export default function DealerDashboardPage() {
                             <TableHead>Name</TableHead>
                             <TableHead>Total Orders</TableHead>
                             <TableHead>Last Order</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -387,6 +388,15 @@ export default function DealerDashboardPage() {
                                 <TableCell className="font-medium">{customer.name} <br/><span className="text-xs text-muted-foreground">{customer.email}</span></TableCell>
                                 <TableCell className="text-center">{customer.totalOrders}</TableCell>
                                 <TableCell>{customer.lastOrderDate}</TableCell>
+                                <TableCell className="text-right">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => toast({title: "Mock Action", description:`Viewing details for ${customer.name} (mock).`})}
+                                    >
+                                        <Eye className="mr-1 h-4 w-4"/> View
+                                    </Button>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -469,3 +479,4 @@ export default function DealerDashboardPage() {
     </div>
   );
 }
+
