@@ -3,9 +3,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
-import { mockProducts } from "@/lib/mockData";
+import { mockProducts, mockUsers } from "@/lib/mockData"; // mockUsers imported
 import type { Product, DealerUser } from "@/types";
-import { Briefcase, ShoppingBag, FileText, UserCircle, ArrowRight } from "lucide-react";
+import { Briefcase, ShoppingBag, UserCircle, ArrowRight } from "lucide-react"; // Removed FileText
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -85,14 +85,14 @@ export default function DealerDashboardPage() {
                 <h1 className="text-3xl font-bold font-headline">
                     Welcome, {currentUser?.dealerName || "Dealer"}!
                 </h1>
-                <p className="text-muted-foreground">Your portal for product catalog and bulk inquiries.</p>
+                <p className="text-muted-foreground">Your portal for browsing our product catalog.</p>
             </div>
         </div>
       </div>
 
       <section>
         <h2 className="text-2xl font-bold font-headline mb-6">Quick Actions</h2>
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2"> {/* Adjusted grid for 2 items */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg font-semibold">Browse Full Catalog</CardTitle>
@@ -105,18 +105,7 @@ export default function DealerDashboardPage() {
               </Button>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">Submit Bulk Inquiry</CardTitle>
-              <FileText className="h-6 w-6 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">Need large quantities? Submit an inquiry.</p>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/dealer/inquiries">Make an Inquiry <ArrowRight className="ml-2 h-4 w-4"/></Link>
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Removed Bulk Inquiry Card */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg font-semibold">Your Profile</CardTitle>
@@ -137,7 +126,7 @@ export default function DealerDashboardPage() {
           <h2 className="text-2xl font-bold font-headline mb-6">Featured Products for Dealers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredProducts.map(product => (
-              <ProductCard key={product.id} product={product} isAdminView={false} /> // isAdminView=false to hide admin buttons
+              <ProductCard key={product.id} product={product} isAdminView={false} />
             ))}
           </div>
         </section>

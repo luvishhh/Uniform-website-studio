@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { LayoutDashboard, Settings, Package, ShoppingBag, FileText, LogOut, Briefcase } from "lucide-react";
+import { LayoutDashboard, Settings, ShoppingBag, LogOut, Briefcase } from "lucide-react"; // Removed FileText
 
 const dealerNavItems = [
   { href: "/dealer/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dealer/products", label: "Browse Catalog", icon: ShoppingBag },
-  { href: "/dealer/inquiries", label: "Bulk Inquiries", icon: FileText },
+  // { href: "/dealer/inquiries", label: "Bulk Inquiries", icon: FileText }, // Removed
   { type: "separator" },
   { href: "/profile?tab=settings", label: "Account Settings", icon: Settings },
 ];
