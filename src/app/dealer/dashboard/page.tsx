@@ -5,7 +5,7 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { mockProducts, mockUsers } from "@/lib/mockData"; // mockUsers imported
 import type { Product, DealerUser } from "@/types";
-import { Briefcase, ShoppingBag, UserCircle, ArrowRight } from "lucide-react"; // Removed FileText
+import { Briefcase, ShoppingBag, UserCircle, ArrowRight } from "lucide-react"; 
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -92,20 +92,7 @@ export default function DealerDashboardPage() {
 
       <section>
         <h2 className="text-2xl font-bold font-headline mb-6">Quick Actions</h2>
-        <div className="grid gap-6 md:grid-cols-2"> {/* Adjusted grid for 2 items */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">Browse Full Catalog</CardTitle>
-              <ShoppingBag className="h-6 w-6 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">Explore all available uniform products.</p>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/dealer/products">View Catalog <ArrowRight className="ml-2 h-4 w-4"/></Link>
-              </Button>
-            </CardContent>
-          </Card>
-          {/* Removed Bulk Inquiry Card */}
+        <div className="grid gap-6 md:grid-cols-2"> 
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg font-semibold">Your Profile</CardTitle>
