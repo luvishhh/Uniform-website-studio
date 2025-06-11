@@ -53,11 +53,11 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
                     size="sm"
                     className="bg-background/80 hover:bg-background text-foreground border-border backdrop-blur-sm"
                     asChild
-                    onClick={(e) => e.stopPropagation()}
+                    // onClick removed to allow parent Link to handle navigation
                 >
-                    <Link href={`/products/${product.id}`}>
+                    <span className="inline-flex items-center cursor-pointer">
                         <Eye className="mr-2 h-4 w-4" /> View Details
-                    </Link>
+                    </span>
                 </Button>
             </div>
           )}
@@ -91,7 +91,7 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
               variant="default"
               className="bg-primary hover:bg-primary/90 group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300"
               onClick={(e) => {
-                e.stopPropagation();
+                e.stopPropagation(); // Prevent card link navigation if button has its own action
                 alert(`Added ${product.name} to cart (mock)`);
               }}
               aria-label={`Add ${product.name} to cart`}
