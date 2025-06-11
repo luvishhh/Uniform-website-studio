@@ -7,10 +7,11 @@ import Logo from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { LayoutDashboard, Settings, Building, LogOut } from "lucide-react"; // Added LogOut
+import { LayoutDashboard, Settings, Building, LogOut, ListOrdered } from "lucide-react"; // Added LogOut, ListOrdered
 
 const institutionNavItems = [
   { href: "/institution/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/institution/student-purchases", label: "Student Purchases", icon: ListOrdered },
   { type: "separator" },
   { href: "/profile?tab=settings", label: "Account Settings", icon: Settings }, // Link to profile's settings tab
 ];
@@ -34,13 +35,21 @@ export default function InstitutionSidebar() {
                 <Button
                   variant="ghost"
                   className={`w-full justify-start text-sm h-10 px-3 ${
-                    pathname === item.href || (item.href && pathname.startsWith(item.href) && item.href !== "/institution/dashboard" && item.href !== "/profile?tab=settings")
+                    pathname === item.href || (item.href && pathname.startsWith(item.href) && item.href !== "/institution/dashboard" && item.href !== "/profile?tab=settings" && item.href !== "/institution/student-purchases")
                       ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
                       : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   } ${
                     (item.href === "/profile?tab=settings" && pathname === "/profile" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "settings")
                     ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90" : ""
-                  }`}
+                  } ${
+                    (item.href === "/institution/student-purchases" && pathname === "/institution/student-purchases")
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90" : ""
+                  }
+                  ${ // Ensure active state for dashboard specifically
+                    (item.href === "/institution/dashboard" && pathname === "/institution/dashboard")
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90" : ""
+                  }
+                  `}
                 >
                   {item.icon && <item.icon className="mr-2 h-4 w-4" />}
                   {item.label}
