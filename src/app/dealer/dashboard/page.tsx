@@ -9,7 +9,7 @@ import Link from "next/link";
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { ResponsiveContainer, LineChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend as RechartsLegend, ComposedChart, Pie, Cell as RechartsCell } from 'recharts';
+import { ResponsiveContainer, LineChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend as RechartsLegend, ComposedChart, Pie, Cell as RechartsCell, PieChart } from 'recharts';
 import { format, parseISO, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, subMonths } from "date-fns";
 
 const LOW_STOCK_THRESHOLD = 10;
@@ -63,6 +63,8 @@ export default function DealerDashboardPage() {
       }
 
       if (activeUser) {
+        // Using general mockOrders and mockProducts for demo analytics
+        // In a real app, these would be filtered by dealer association
         const allSales = mockOrders.reduce((sum, order) => sum + order.totalAmount, 0);
         setTotalSales(allSales);
 
@@ -118,7 +120,7 @@ export default function DealerDashboardPage() {
     return Object.entries(categoryCounts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+      .slice(0, 5); // Top 5 categories
   }, []);
 
 
@@ -267,108 +269,118 @@ export default function DealerDashboardPage() {
         </Card>
       </section>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Order Management</CardTitle>
-                <ShoppingCart className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">View, track, and update orders.</p>
-                <Button asChild variant="outline" className="w-full"><Link href="/dealer/orders">Manage Orders <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
-            </CardContent>
-        </Card>
+      <section>
+        <h2 className="text-2xl font-bold font-headline mb-4">Dealer Tools & Management</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Order Management</CardTitle>
+                    <ShoppingCart className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">View, track, and update orders.</p>
+                    <Button asChild variant="outline" className="w-full"><Link href="/dealer/orders">Manage Orders <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
+                </CardContent>
+            </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Inventory Management</CardTitle>
-                <Archive className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">Track stock levels and manage products.</p>
-                <Button asChild variant="outline" className="w-full"><Link href="/dealer/inventory">Manage Inventory <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
-            </CardContent>
-        </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Inventory Management</CardTitle>
+                    <Archive className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">Track stock levels and manage products.</p>
+                    <Button asChild variant="outline" className="w-full"><Link href="/dealer/inventory">Manage Inventory <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
+                </CardContent>
+            </Card>
 
-        <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Sales & Revenue</CardTitle>
-                <BarChart3 className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">Detailed sales reports and revenue summaries.</p>
-                <Button variant="outline" className="w-full" disabled>View Reports (Coming Soon)</Button>
-            </CardContent>
-        </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Profile & Settings</CardTitle>
+                    <Settings className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">Manage your dealer account details.</p>
+                    <Button asChild variant="outline" className="w-full"><Link href="/profile?tab=settings">Go to Settings <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
+                </CardContent>
+            </Card>
+        </div>
+      </section>
 
-        <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Customer Management</CardTitle>
-                <Users className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">View customer lists and order history.</p>
-                <Button variant="outline" className="w-full" disabled>Manage Customers (Coming Soon)</Button>
-            </CardContent>
-        </Card>
+      <section>
+        <h2 className="text-2xl font-bold font-headline mb-4">Future Features (Placeholders)</h2>
+         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="opacity-70 cursor-not-allowed">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Sales & Revenue</CardTitle>
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">Detailed sales reports and revenue summaries.</p>
+                    <Button variant="outline" className="w-full" disabled>View Reports (Coming Soon)</Button>
+                </CardContent>
+            </Card>
 
-        <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Promotions & Discounts</CardTitle>
-                <Tag className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">Create and manage promotional offers.</p>
-                <Button variant="outline" className="w-full" disabled>Manage Promotions (Coming Soon)</Button>
-            </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Communication Tools</CardTitle>
-                <MessageSquare className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">Messages, notifications, and support.</p>
-                <Button variant="outline" className="w-full" disabled>View Messages (Coming Soon)</Button>
-            </CardContent>
-        </Card>
+            <Card className="opacity-70 cursor-not-allowed">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Customer Management</CardTitle>
+                    <Users className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">View customer lists and order history.</p>
+                    <Button variant="outline" className="w-full" disabled>Manage Customers (Coming Soon)</Button>
+                </CardContent>
+            </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Profile & Settings</CardTitle>
-                <Settings className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">Manage your dealer account details.</p>
-                <Button asChild variant="outline" className="w-full"><Link href="/profile?tab=settings">Go to Settings <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
-            </CardContent>
-        </Card>
+            <Card className="opacity-70 cursor-not-allowed">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Promotions & Discounts</CardTitle>
+                    <Tag className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">Create and manage promotional offers.</p>
+                    <Button variant="outline" className="w-full" disabled>Manage Promotions (Coming Soon)</Button>
+                </CardContent>
+            </Card>
+            
+            <Card className="opacity-70 cursor-not-allowed">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Communication Tools</CardTitle>
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">Messages, notifications, and support.</p>
+                    <Button variant="outline" className="w-full" disabled>View Messages (Coming Soon)</Button>
+                </CardContent>
+            </Card>
 
-         <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Advanced Analytics</CardTitle>
-                <PieChartIcon className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">Deeper insights and performance metrics.</p>
-                <Button variant="outline" className="w-full" disabled>View Analytics (Coming Soon)</Button>
-            </CardContent>
-        </Card>
+             <Card className="opacity-70 cursor-not-allowed">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Advanced Analytics</CardTitle>
+                    <PieChartIcon className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">Deeper insights and performance metrics.</p>
+                    <Button variant="outline" className="w-full" disabled>View Analytics (Coming Soon)</Button>
+                </CardContent>
+            </Card>
 
-        <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-semibold">Help & Resources</CardTitle>
-                <HelpCircle className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">FAQs, guides, and support contact.</p>
-                <Button variant="outline" className="w-full" disabled>Get Help (Coming Soon)</Button>
-            </CardContent>
-        </Card>
-      </div>
+            <Card className="opacity-70 cursor-not-allowed">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-semibold">Help & Resources</CardTitle>
+                    <HelpCircle className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">FAQs, guides, and support contact.</p>
+                    <Button variant="outline" className="w-full" disabled>Get Help (Coming Soon)</Button>
+                </CardContent>
+            </Card>
+         </div>
+      </section>
     </div>
   );
 }
+
+    
 
     
