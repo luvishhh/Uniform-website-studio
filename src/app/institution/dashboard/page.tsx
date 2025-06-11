@@ -5,7 +5,7 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { mockProducts, mockOrders, mockUsers, getProductById, getUserById } from "@/lib/mockData";
 import type { Product, InstitutionUser, StudentUser, User, Order, CartItem } from "@/types";
-import { ListChecks, FileText, Building, UserCircle, Users, ShoppingCart, Star, UserCheck, Package as PackageIcon, Calendar as CalendarIcon, TableIcon } from "lucide-react";
+import { FileText, Building, UserCircle, Users, ShoppingCart, Star, UserCheck, Package as PackageIcon, Calendar as CalendarIcon, ListChecks } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -506,35 +506,7 @@ export default function InstitutionDashboardPage() {
 
       <section>
           <h2 className="text-2xl font-bold font-headline mb-6">Quick Actions</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg font-medium font-headline">Manage Uniform Catalog</CardTitle>
-                <ListChecks className="h-5 w-5 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  View, add, or request changes to your institution's approved uniform list.
-                </p>
-                <Button asChild variant="outline">
-                  <Link href="/institution/catalog">Manage Catalog</Link>
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg font-medium font-headline">Bulk Order Inquiries</CardTitle>
-                <FileText className="h-5 w-5 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Initiate or track bulk order requests for your institution's uniform needs.
-                </p>
-                <Button asChild variant="outline">
-                  <Link href="/institution/bulk-orders">Bulk Orders</Link>
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1"> {/* Adjusted grid for single item */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-medium font-headline">Your Profile</CardTitle>
@@ -568,7 +540,7 @@ export default function InstitutionDashboardPage() {
                 <p className="text-muted-foreground">
                     No specific uniforms are currently listed for {currentUser?.institutionName || "your institution"}.
                     <br />
-                    Please use the "Bulk Orders" section for inquiries or contact support to update your uniform list.
+                    Please contact support to update your uniform list.
                 </p>
                  <Button variant="link" className="mt-4" asChild><Link href="/contact">Contact Support</Link></Button>
             </CardContent>
