@@ -23,20 +23,34 @@ import { TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF', '#FF4040', '#40FF4F'];
 
-// Helper to get initials
 const getInitials = (name: string = "") => {
   if (!name) return "U";
   const names = name.split(' ');
   return names.map(n => n[0]).join('').toUpperCase() || 'U';
 };
 
+// Prepare default data outside the component function to ensure it's stable
+const defaultInstitutionForDemo = mockUsers.find(u => u.id === 'inst_1' && u.role === 'institution') as InstitutionUser | undefined;
+const defaultProductsForDemo = defaultInstitutionForDemo
+  ? mockProducts.filter(p =>
+      p.institution &&
+      defaultInstitutionForDemo.institutionName &&
+      p.institution.toLowerCase() === defaultInstitutionForDemo.institutionName.toLowerCase()
+    )
+  : [];
+
 
 export default function InstitutionDashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<InstitutionUser | null>(null);
-  const [institutionProducts, setInstitutionProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize state with default demo data
+  const [currentUser, setCurrentUser] = useState<InstitutionUser | null>(defaultInstitutionForDemo || null);
+  const [institutionProducts, setInstitutionProducts] = useState<Product[]>(defaultProductsForDemo);
+  // If defaultInstitutionForDemo exists, we are not initially loading for the demo case.
+  // If it doesn't exist (error in mockData), then we are in a loading/error state.
+  const [isLoading, setIsLoading] = useState<boolean>(!defaultInstitutionForDemo);
+
 
   // State for analytics
   const [registeredStudents, setRegisteredStudents] = useState<StudentUser[]>([]);
@@ -51,60 +65,77 @@ export default function InstitutionDashboardPage() {
   });
 
   useEffect(() => {
-    const fetchInstitutionData = async () => {
-      setIsLoading(true);
-      let fetchedInstitution: InstitutionUser | null = null;
+    // This effect now attempts to fetch a REAL logged-in user and override the demo data if successful.
+    const fetchAndOverrideWithRealUserData = async () => {
       const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
       const storedUserRole = typeof window !== "undefined" ? localStorage.getItem('unishop_user_role') : null;
 
       if (storedUserId && storedUserRole === 'institution') {
+        setIsLoading(true); // We are attempting to load real data
         try {
           const userRes = await fetch(`/api/user/${storedUserId}`);
           if (userRes.ok) {
             const apiUserData: User = await userRes.json();
             if (apiUserData.role === 'institution') {
-              fetchedInstitution = apiUserData as InstitutionUser;
+              const realInstitution = apiUserData as InstitutionUser;
+              setCurrentUser(realInstitution);
+              setInstitutionProducts(
+                mockProducts.filter(p =>
+                  p.institution &&
+                  realInstitution.institutionName &&
+                  p.institution.toLowerCase() === realInstitution.institutionName.toLowerCase()
+                )
+              );
+              console.log("Successfully loaded real institution data:", realInstitution.institutionName);
             } else {
-               console.warn(`User ID ${storedUserId} is not an institution role. Will default to demo data.`);
+              // Logged-in user is not an institution. Revert to demo data if it was set.
+              console.warn(`User ID ${storedUserId} is not an institution role. Reverting to demo data if available.`);
+              if (defaultInstitutionForDemo) {
+                setCurrentUser(defaultInstitutionForDemo);
+                setInstitutionProducts(defaultProductsForDemo);
+              } else {
+                setCurrentUser(null);
+                setInstitutionProducts([]);
+              }
             }
           } else {
-            console.warn(`Failed to fetch user data for ID: ${storedUserId}, status: ${userRes.status}. Will default to demo data.`);
+            console.warn(`Failed to fetch user data for ID: ${storedUserId}, status: ${userRes.status}. Reverting to demo data if available.`);
+            if (defaultInstitutionForDemo) {
+              setCurrentUser(defaultInstitutionForDemo);
+              setInstitutionProducts(defaultProductsForDemo);
+            } else {
+              setCurrentUser(null);
+              setInstitutionProducts([]);
+            }
           }
         } catch (error) {
-          console.warn("Error fetching logged-in institution from API. Will default to demo data.", error);
+          console.warn("Error fetching logged-in institution from API. Reverting to demo data if available.", error);
+          if (defaultInstitutionForDemo) {
+            setCurrentUser(defaultInstitutionForDemo);
+            setInstitutionProducts(defaultProductsForDemo);
+          } else {
+            setCurrentUser(null);
+            setInstitutionProducts([]);
+          }
+        } finally {
+          setIsLoading(false);
         }
-      }
-
-      if (fetchedInstitution) {
-        setCurrentUser(fetchedInstitution);
-        const products = mockProducts.filter(p =>
-          p.institution &&
-          fetchedInstitution.institutionName &&
-          p.institution.toLowerCase() === fetchedInstitution.institutionName.toLowerCase()
-        );
-        setInstitutionProducts(products);
       } else {
-        // Fallback to default institution if no valid user is fetched
-        console.log("No valid logged-in institution found or role mismatch. Defaulting to 'Greenwood High' (inst_1) for dashboard demonstration.");
-        const defaultInstitution = mockUsers.find(u => u.id === 'inst_1' && u.role === 'institution') as InstitutionUser | undefined;
-        if (defaultInstitution) {
-            setCurrentUser(defaultInstitution); // Set state for currentUser
-            const products = mockProducts.filter(p => // Recalculate products for default user
-                p.institution &&
-                defaultInstitution.institutionName &&
-                p.institution.toLowerCase() === defaultInstitution.institutionName.toLowerCase()
-            );
-            setInstitutionProducts(products); // Set state for institutionProducts
+        // No stored user, ensure demo data is set (already done by useState)
+        // and isLoading is correctly false if demo data was available.
+        if(defaultInstitutionForDemo) {
+            console.log("No real institution logged in. Displaying demo data for Greenwood High.");
         } else {
-            console.error("Default institution 'inst_1' (Greenwood High) not found in mockUsers. Dashboard may be empty.");
-            toast({ title: "Error", description: "Could not load default institution data for the dashboard.", variant: "destructive"});
+            console.error("CRITICAL: Default institution 'inst_1' NOT FOUND in mockUsers. Dashboard will be empty.");
+            toast({ title: "Dashboard Load Error", description: "Default institution data missing. Please check mock data.", variant: "destructive"});
         }
+        setIsLoading(false); 
       }
-      setIsLoading(false);
     };
-    fetchInstitutionData();
+    
+    fetchAndOverrideWithRealUserData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast]); 
+  }, [toast]); // Rerun if toast changes (which is rare)
 
   useEffect(() => {
     if (currentUser && currentUser.role === 'institution' && currentUser.institutionName) {
@@ -267,7 +298,7 @@ export default function InstitutionDashboardPage() {
         <Building className="h-12 w-12 text-destructive mr-3" />
         <div>
           <p className="text-xl font-semibold">Unable to Load Institution Data</p>
-          <p className="text-muted-foreground">Please ensure you are logged in or try again later.</p>
+          <p className="text-muted-foreground">Please ensure you are logged in or try again later. If this persists, default demo data might be missing.</p>
           <Button onClick={() => router.push('/login')} className="mt-4">Go to Login</Button>
         </div>
       </div>
@@ -576,4 +607,3 @@ export default function InstitutionDashboardPage() {
     </div>
   );
 }
-
