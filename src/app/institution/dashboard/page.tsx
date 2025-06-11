@@ -504,26 +504,7 @@ export default function InstitutionDashboardPage() {
         </Card>
       </section>
 
-      <section>
-          <h2 className="text-2xl font-bold font-headline mb-6">Quick Actions</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1"> {/* Adjusted grid for single item */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg font-medium font-headline">Your Profile</CardTitle>
-                <UserCircle className="h-5 w-5 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  View and update your institution's contact and profile information.
-                </p>
-                <Button asChild variant="outline">
-                  <Link href="/profile">View Profile</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-      </section>
-
+      {/* Quick Actions section removed */}
 
       <section>
         <h2 className="text-2xl font-bold font-headline mb-6">Uniforms for {currentUser?.institutionName || "Your Institution"}</h2>
@@ -550,8 +531,3 @@ export default function InstitutionDashboardPage() {
     </div>
   );
 }
-
-
-      
-
-    
