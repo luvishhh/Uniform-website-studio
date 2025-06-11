@@ -7,12 +7,10 @@ import Logo from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { LayoutDashboard, Settings, Building } from "lucide-react"; // Removed ListChecks, FileText
+import { LayoutDashboard, Settings, Building, LogOut } from "lucide-react"; // Added LogOut
 
 const institutionNavItems = [
   { href: "/institution/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  // { href: "/institution/catalog", label: "Manage Catalog", icon: ListChecks }, // Removed
-  // { href: "/institution/bulk-orders", label: "Bulk Orders", icon: FileText }, // Removed
   { type: "separator" },
   { href: "/profile?tab=settings", label: "Account Settings", icon: Settings }, // Link to profile's settings tab
 ];
