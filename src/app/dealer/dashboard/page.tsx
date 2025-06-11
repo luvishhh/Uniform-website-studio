@@ -1,11 +1,10 @@
 
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
-import { mockProducts, mockUsers } from "@/lib/mockData"; // mockUsers imported
-import type { Product, DealerUser } from "@/types";
-import { Briefcase, ShoppingBag, UserCircle, ArrowRight } from "lucide-react"; 
+import { mockUsers } from "@/lib/mockData"; 
+import type { DealerUser } from "@/types";
+import { Briefcase, UserCircle, ArrowRight } from "lucide-react"; 
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -16,8 +15,6 @@ export default function DealerDashboardPage() {
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<DealerUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const featuredProducts = mockProducts.filter(p => p.featured).slice(0, 3);
 
   useEffect(() => {
     const fetchDealerData = async () => {
@@ -108,16 +105,8 @@ export default function DealerDashboardPage() {
         </div>
       </section>
 
-      {featuredProducts.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold font-headline mb-6">Featured Products for Dealers</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProducts.map(product => (
-              <ProductCard key={product.id} product={product} isAdminView={false} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Featured Products for Dealers section removed */}
+      
     </div>
   );
 }
