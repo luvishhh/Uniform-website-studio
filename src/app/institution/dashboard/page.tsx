@@ -167,7 +167,7 @@ export default function InstitutionDashboardPage() {
 
 
   const institutionSalesData = useMemo(() => {
-    if (!currentUser || !institutionProducts.length) return [];
+    if (!currentUser || !institutionProducts.length || !currentUser.institutionName) return [];
     const institutionNameLower = currentUser.institutionName.toLowerCase();
     
     const monthlySales: Record<string, { sales: number, revenue: number, date: Date }> = {};
@@ -197,7 +197,7 @@ export default function InstitutionDashboardPage() {
   }, [currentUser, institutionProducts, dateRange]);
 
   const productSalesDistribution = useMemo(() => {
-    if (!currentUser || !institutionProducts.length) return [];
+    if (!currentUser || !institutionProducts.length || !currentUser.institutionName) return [];
     const institutionNameLower = currentUser.institutionName.toLowerCase();
     const salesByProduct: Record<string, { name: string, value: number }> = {};
 
@@ -506,7 +506,21 @@ export default function InstitutionDashboardPage() {
 
       <section>
           <h2 className="text-2xl font-bold font-headline mb-6">Quick Actions</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2"> {/* Adjusted grid for two items */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-medium font-headline">Manage Uniform Catalog</CardTitle>
+                <ListChecks className="h-5 w-5 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  View, add, or request changes to your institution's approved uniform list.
+                </p>
+                <Button asChild variant="outline">
+                  <Link href="/institution/catalog">Manage Catalog</Link>
+                </Button>
+              </CardContent>
+            </Card>
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-medium font-headline">Bulk Order Inquiries</CardTitle>
