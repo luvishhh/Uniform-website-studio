@@ -2,26 +2,34 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockUsers, mockOrders, mockProducts, mockCategories, getUserById } from "@/lib/mockData";
+import { mockUsers, mockOrders, mockProducts, getUserById } from "@/lib/mockData";
 import type { DealerUser, Order, Product } from "@/types";
-import { Briefcase, UserCircle, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as PieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive } from "lucide-react";
+import { Briefcase, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as PieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive, TrendingUp, UserCheck, Clock, Download, Building } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { ResponsiveContainer, LineChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend as RechartsLegend, ComposedChart, Pie, Cell as RechartsCell, PieChart } from 'recharts';
-import { format, parseISO, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, subMonths } from "date-fns";
+import { format, parseISO, subMonths } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 const LOW_STOCK_THRESHOLD = 10;
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
 
-const getInitials = (name: string = "") => {
-  if (!name) return "U";
-  const names = name.split(' ');
-  return names.map(n => n[0]).join('').toUpperCase() || 'U';
-};
-
 const defaultDealerForDemo = mockUsers.find(u => u.id === 'deal_1' && u.role === 'dealer') as DealerUser | undefined;
+
+const mockCustomerData = [
+    { id: 'cust_1', name: 'Alice Wonderland (Student)', email: 'alice.parent@example.com', totalOrders: 3, lastOrderDate: '2023-12-05' },
+    { id: 'cust_2', name: 'Bob The Builder (Student)', email: 'bob.student@example.com', totalOrders: 2, lastOrderDate: '2023-11-01' },
+    { id: 'cust_3', name: 'Greenwood High (Institution)', email: 'admin@greenwood.edu', totalOrders: 15, lastOrderDate: '2023-11-20' },
+];
+
+const mockPayoutHistory = [
+    { id: 'pay_1', date: '2023-12-01', amount: 450.75, status: 'Paid' },
+    { id: 'pay_2', date: '2023-11-01', amount: 380.50, status: 'Paid' },
+    { id: 'pay_3', date: '2023-10-01', amount: 520.00, status: 'Paid' },
+];
 
 export default function DealerDashboardPage() {
   const router = useRouter();
@@ -63,10 +71,8 @@ export default function DealerDashboardPage() {
       }
 
       if (activeUser) {
-        // Using general mockOrders and mockProducts for demo analytics
-        // In a real app, these would be filtered by dealer association
-        const allSales = mockOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-        setTotalSales(allSales);
+        const allSalesData = mockOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+        setTotalSales(allSalesData);
 
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
@@ -120,8 +126,12 @@ export default function DealerDashboardPage() {
     return Object.entries(categoryCounts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5); // Top 5 categories
+      .slice(0, 5);
   }, []);
+
+  const averageOrderValue = useMemo(() => {
+    return mockOrders.length > 0 ? totalSales / mockOrders.length : 0;
+  }, [totalSales]);
 
 
   if (isLoading) {
@@ -270,7 +280,7 @@ export default function DealerDashboardPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">Dealer Tools & Management</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">Dealer Tools &amp; Management</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -296,7 +306,7 @@ export default function DealerDashboardPage() {
 
             <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg font-semibold">Profile & Settings</CardTitle>
+                    <CardTitle className="text-lg font-semibold">Profile &amp; Settings</CardTitle>
                     <Settings className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
@@ -306,35 +316,125 @@ export default function DealerDashboardPage() {
             </Card>
         </div>
       </section>
+      
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="text-xl font-semibold flex items-center"><DollarSign className="mr-2 h-5 w-5 text-primary"/> Sales &amp; Revenue</CardTitle>
+                <CardDescription>Track your earnings and sales performance.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground">Revenue (This Month)</p>
+                        <p className="text-2xl font-bold">${monthlySales.toFixed(2)}</p>
+                    </div>
+                    <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground">Commissions (Mock)</p>
+                        <p className="text-2xl font-bold">${(monthlySales * 0.1).toFixed(2)}</p> {/* Mock 10% */}
+                    </div>
+                    <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground">Pending Payouts (Mock)</p>
+                        <p className="text-2xl font-bold">${(monthlySales * 0.05).toFixed(2)}</p> {/* Mock */}
+                    </div>
+                </div>
+                <div>
+                    <h4 className="text-md font-semibold mb-2">Payout History (Mock)</h4>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {mockPayoutHistory.map(payout => (
+                                <TableRow key={payout.id}>
+                                    <TableCell>{payout.date}</TableCell>
+                                    <TableCell>${payout.amount.toFixed(2)}</TableCell>
+                                    <TableCell><Badge variant={payout.status === 'Paid' ? 'default' : 'secondary'}>{payout.status}</Badge></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={() => toast({title: "Mock Action", description:"Sales report download initiated (mock)."})}><Download className="mr-2 h-4 w-4"/>Download Sales Report (CSV)</Button>
+                    <Button variant="outline" size="sm" onClick={() => toast({title: "Mock Action", description:"Tax summary download initiated (mock)."})}><Download className="mr-2 h-4 w-4"/>Download Tax Summary (PDF)</Button>
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-xl font-semibold flex items-center"><Users className="mr-2 h-5 w-5 text-primary"/> Customer Overview</CardTitle>
+                <CardDescription>Summary of customers related to your sales.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <p className="text-xs text-muted-foreground">(This is a simplified mock view. A real system would show customers specific to your dealership.)</p>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Total Orders</TableHead>
+                            <TableHead>Last Order</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {mockCustomerData.slice(0,3).map(customer => (
+                            <TableRow key={customer.id}>
+                                <TableCell className="font-medium">{customer.name} <br/><span className="text-xs text-muted-foreground">{customer.email}</span></TableCell>
+                                <TableCell className="text-center">{customer.totalOrders}</TableCell>
+                                <TableCell>{customer.lastOrderDate}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <Button variant="outline" className="w-full" disabled>View All Customers (Coming Soon)</Button>
+            </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+          <CardHeader>
+                <CardTitle className="text-xl font-semibold flex items-center"><TrendingUp className="mr-2 h-5 w-5 text-primary"/> Performance Insights</CardTitle>
+                <CardDescription>Key metrics and insights for your dealership.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><DollarSign className="h-3 w-3"/>Avg. Order Value</p>
+                    <p className="text-2xl font-bold">${averageOrderValue.toFixed(2)}</p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Clock className="h-3 w-3"/>Order Fulfillment (Mock)</p>
+                    <p className="text-2xl font-bold">2-3 Days</p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><UserCheck className="h-3 w-3"/>Retention Rate (Mock)</p>
+                    <p className="text-2xl font-bold">65%</p>
+                </div>
+            </div>
+            <div>
+                <h4 className="text-md font-semibold mb-2">Market Insights (Mock)</h4>
+                <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-4">
+                    <li>Most Popular Size: Medium</li>
+                    <li>Peak Season: Back-to-School (July-Aug)</li>
+                    <li>Trending: Eco-friendly fabric options</li>
+                </ul>
+            </div>
+             <Button variant="outline" className="w-full md:w-auto" disabled>View Detailed Analytics (Coming Soon)</Button>
+          </CardContent>
+      </Card>
+
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">Future Features (Placeholders)</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">Additional Tools (Placeholders)</h2>
          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card className="opacity-70 cursor-not-allowed">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg font-semibold">Sales & Revenue</CardTitle>
-                    <BarChart3 className="h-5 w-5 text-primary" />
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground mb-3">Detailed sales reports and revenue summaries.</p>
-                    <Button variant="outline" className="w-full" disabled>View Reports (Coming Soon)</Button>
-                </CardContent>
-            </Card>
-
-            <Card className="opacity-70 cursor-not-allowed">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg font-semibold">Customer Management</CardTitle>
-                    <Users className="h-5 w-5 text-primary" />
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground mb-3">View customer lists and order history.</p>
-                    <Button variant="outline" className="w-full" disabled>Manage Customers (Coming Soon)</Button>
-                </CardContent>
-            </Card>
-
-            <Card className="opacity-70 cursor-not-allowed">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg font-semibold">Promotions & Discounts</CardTitle>
+                    <CardTitle className="text-lg font-semibold">Promotions &amp; Discounts</CardTitle>
                     <Tag className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
@@ -354,20 +454,9 @@ export default function DealerDashboardPage() {
                 </CardContent>
             </Card>
 
-             <Card className="opacity-70 cursor-not-allowed">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg font-semibold">Advanced Analytics</CardTitle>
-                    <PieChartIcon className="h-5 w-5 text-primary" />
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground mb-3">Deeper insights and performance metrics.</p>
-                    <Button variant="outline" className="w-full" disabled>View Analytics (Coming Soon)</Button>
-                </CardContent>
-            </Card>
-
             <Card className="opacity-70 cursor-not-allowed">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg font-semibold">Help & Resources</CardTitle>
+                    <CardTitle className="text-lg font-semibold">Help &amp; Resources</CardTitle>
                     <HelpCircle className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
@@ -380,7 +469,3 @@ export default function DealerDashboardPage() {
     </div>
   );
 }
-
-    
-
-    
