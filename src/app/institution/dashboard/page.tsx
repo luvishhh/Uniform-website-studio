@@ -5,7 +5,7 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { mockProducts, mockOrders, mockUsers, getProductById, getUserById } from "@/lib/mockData";
 import type { Product, InstitutionUser, StudentUser, User, Order, CartItem } from "@/types";
-import { FileText, Building, UserCircle, Users, ShoppingCart, Star, UserCheck, Package as PackageIcon, Calendar as CalendarIcon, ListChecks } from "lucide-react";
+import { FileText, Building, UserCircle, Users, ShoppingCart, Star, UserCheck, Package as PackageIcon, Calendar as CalendarIcon, ListChecks, ListOrdered } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -53,7 +53,7 @@ export default function InstitutionDashboardPage() {
   useEffect(() => {
     const fetchInstitutionData = async () => {
       setIsLoading(true);
-      let institutionData: InstitutionUser | null = null;
+      let fetchedInstitution: InstitutionUser | null = null;
       const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
       const storedUserRole = typeof window !== "undefined" ? localStorage.getItem('unishop_user_role') : null;
 
@@ -63,45 +63,48 @@ export default function InstitutionDashboardPage() {
           if (userRes.ok) {
             const apiUserData: User = await userRes.json();
             if (apiUserData.role === 'institution') {
-              institutionData = apiUserData as InstitutionUser;
+              fetchedInstitution = apiUserData as InstitutionUser;
             } else {
-               console.warn(`User ID ${storedUserId} is not an institution role.`);
+               console.warn(`User ID ${storedUserId} is not an institution role. Will default to demo data.`);
             }
           } else {
-            console.warn(`Failed to fetch user data for ID: ${storedUserId}, status: ${userRes.status}`);
+            console.warn(`Failed to fetch user data for ID: ${storedUserId}, status: ${userRes.status}. Will default to demo data.`);
           }
         } catch (error) {
-          console.warn("Error fetching logged-in institution from API:", error);
+          console.warn("Error fetching logged-in institution from API. Will default to demo data.", error);
         }
       }
 
-      if (!institutionData) {
-        console.log("No valid logged-in institution found or role mismatch. Defaulting to 'Greenwood High' (inst_1) for dashboard demonstration.");
-        const defaultInstitution = mockUsers.find(u => u.id === 'inst_1' && u.role === 'institution') as InstitutionUser | undefined;
-        if (defaultInstitution) {
-            institutionData = defaultInstitution;
-        } else {
-            console.error("Default institution 'inst_1' (Greenwood High) not found in mockUsers.");
-        }
-      }
-
-      if (institutionData) {
-        setCurrentUser(institutionData);
-        const products = mockProducts.filter(p => 
-          p.institution && 
-          institutionData.institutionName && 
-          p.institution.toLowerCase() === institutionData.institutionName.toLowerCase()
+      if (fetchedInstitution) {
+        setCurrentUser(fetchedInstitution);
+        const products = mockProducts.filter(p =>
+          p.institution &&
+          fetchedInstitution.institutionName &&
+          p.institution.toLowerCase() === fetchedInstitution.institutionName.toLowerCase()
         );
         setInstitutionProducts(products);
       } else {
-        console.error("Failed to load any institution data (including default). Dashboard may be empty.");
-        toast({ title: "Error", description: "Could not load institution data for the dashboard.", variant: "destructive"});
+        // Fallback to default institution if no valid user is fetched
+        console.log("No valid logged-in institution found or role mismatch. Defaulting to 'Greenwood High' (inst_1) for dashboard demonstration.");
+        const defaultInstitution = mockUsers.find(u => u.id === 'inst_1' && u.role === 'institution') as InstitutionUser | undefined;
+        if (defaultInstitution) {
+            setCurrentUser(defaultInstitution); // Set state for currentUser
+            const products = mockProducts.filter(p => // Recalculate products for default user
+                p.institution &&
+                defaultInstitution.institutionName &&
+                p.institution.toLowerCase() === defaultInstitution.institutionName.toLowerCase()
+            );
+            setInstitutionProducts(products); // Set state for institutionProducts
+        } else {
+            console.error("Default institution 'inst_1' (Greenwood High) not found in mockUsers. Dashboard may be empty.");
+            toast({ title: "Error", description: "Could not load default institution data for the dashboard.", variant: "destructive"});
+        }
       }
       setIsLoading(false);
     };
     fetchInstitutionData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast]); // Keeping toast dependency, router is not strictly needed for this demo behavior.
+  }, [toast]); 
 
   useEffect(() => {
     if (currentUser && currentUser.role === 'institution' && currentUser.institutionName) {
