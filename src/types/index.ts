@@ -7,23 +7,24 @@ export type Product = {
   name: string;
   description: string;
   price: number;
-  category: 'School' | 'College'; 
-  institution?: string; 
+  category: 'School' | 'College';
+  institution?: string;
   sizes: string[];
   colors?: string[];
   gender: 'Unisex' | 'Boys' | 'Girls';
   imageUrl: string;
   featured?: boolean;
+  stock?: number; // Added for inventory management
   ['data-ai-hint']?: string;
 };
 
 export type Category = {
   id:string;
   _id?: ObjectId; // For MongoDB
-  name: 'School' | 'College'; 
+  name: 'School' | 'College';
   description: string;
   imageUrl: string;
-  slug: 'school' | 'college'; 
+  slug: 'school' | 'college';
   ['data-ai-hint']?: string;
 };
 
@@ -31,8 +32,8 @@ export type Category = {
 export type BaseUser = {
   id: string; // This will be the string representation of _id
   _id?: ObjectId; // For MongoDB native ID
-  email?: string; 
-  passwordHash: string; 
+  email?: string;
+  passwordHash: string;
   role: 'student' | 'institution' | 'dealer' | 'admin';
   contactNumber?: string;
   imageUrl?: string; // Added for profile picture
@@ -45,8 +46,8 @@ export type StudentUser = BaseUser & {
   schoolCollegeName: string;
   fullName: string;
   institutionType: 'school' | 'college';
-  gradeOrCourse: string; 
-  year?: string; 
+  gradeOrCourse: string;
+  year?: string;
   parentName: string;
   parentContactNumber: string;
   address?: {
@@ -59,25 +60,25 @@ export type StudentUser = BaseUser & {
 
 export type InstitutionUser = BaseUser & {
   role: 'institution';
-  email: string; 
+  email: string;
   institutionName: string;
   institutionType: 'school' | 'college';
-  institutionalAddress: string; 
-  contactNumber: string; 
+  institutionalAddress: string;
+  contactNumber: string;
 };
 
 export type DealerUser = BaseUser & {
   role: 'dealer';
-  email: string; 
+  email: string;
   dealerName: string;
-  contactNumber: string; 
+  contactNumber: string;
   businessAddress: string;
   gstinNumber: string;
 };
 
 export type AdminUser = BaseUser & {
   role: 'admin';
-  email: string; 
+  email: string;
 };
 
 export type User = StudentUser | InstitutionUser | DealerUser | AdminUser;
@@ -104,7 +105,7 @@ export type Order = {
   orderDate: string; // Should be ISOString
   shippingAddress: {
     name: string;
-    email?: string; 
+    email?: string;
     street: string;
     city: string;
     zip: string;

@@ -6,17 +6,32 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { LayoutDashboard, Settings, LogOut, Briefcase } from "lucide-react"; 
+import { LayoutDashboard, Settings, LogOut, Briefcase, ShoppingCart, Archive, BarChart3, Users, Tag, MessageSquare, HelpCircle } from "lucide-react";
 
 const dealerNavItems = [
   { href: "/dealer/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  // { href: "/dealer/products", label: "Browse Catalog", icon: ShoppingBag }, // Removed
+  { href: "/dealer/orders", label: "Order Management", icon: ShoppingCart },
+  { href: "/dealer/inventory", label: "Inventory", icon: Archive },
+  // Placeholders for future expansion, can be linked from dashboard for now
+  // { href: "/dealer/sales", label: "Sales & Revenue", icon: BarChart3 },
+  // { href: "/dealer/customers", label: "Customers", icon: Users },
+  // { href: "/dealer/promotions", label: "Promotions", icon: Tag },
+  // { href: "/dealer/messages", label: "Communications", icon: MessageSquare },
   { type: "separator" },
   { href: "/profile?tab=settings", label: "Account Settings", icon: Settings },
+  // { href: "/dealer/help", label: "Help & Resources", icon: HelpCircle },
 ];
 
 export default function DealerSidebar() {
   const pathname = usePathname();
+
+  const isActive = (href: string) => {
+    if (href === "/profile?tab=settings") {
+      return pathname === "/profile" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "settings";
+    }
+    return pathname === href || pathname.startsWith(href + "/"); // Ensure deeper paths are also active
+  };
+
 
   return (
     <aside className="sticky top-0 h-screen w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex-col hidden md:flex">
@@ -34,17 +49,10 @@ export default function DealerSidebar() {
                 <Button
                   variant="ghost"
                   className={`w-full justify-start text-sm h-10 px-3 ${
-                    pathname === item.href || (item.href && pathname.startsWith(item.href) && item.href !== "/dealer/dashboard" && item.href !== "/profile?tab=settings")
+                    isActive(item.href!)
                       ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
                       : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  } ${
-                    (item.href === "/profile?tab=settings" && pathname === "/profile" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "settings")
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90" : ""
-                  } ${ 
-                    (item.href === "/dealer/dashboard" && pathname === "/dealer/dashboard")
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90" : ""
-                  }
-                  `}
+                  }`}
                 >
                   {item.icon && <item.icon className="mr-2 h-4 w-4" />}
                   {item.label}
@@ -65,4 +73,3 @@ export default function DealerSidebar() {
     </aside>
   );
 }
-
