@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { mockUsers, mockOrders, mockProducts, mockCategories, getUserById } from "@/lib/mockData";
 import type { DealerUser, Order, Product } from "@/types";
-import { Briefcase, UserCircle, ArrowRight, DollarSign, ListOrdered, PackageWarning, Bell, LineChart as LineChartIcon, PieChart as PieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive } from "lucide-react";
+import { Briefcase, UserCircle, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as PieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -21,7 +21,6 @@ const getInitials = (name: string = "") => {
   return names.map(n => n[0]).join('').toUpperCase() || 'U';
 };
 
-// Default dealer for demo purposes if not logged in
 const defaultDealerForDemo = mockUsers.find(u => u.id === 'deal_1' && u.role === 'dealer') as DealerUser | undefined;
 
 export default function DealerDashboardPage() {
@@ -64,26 +63,22 @@ export default function DealerDashboardPage() {
       }
 
       if (activeUser) {
-        // For now, these stats are general platform stats for demo.
-        // A real implementation would filter by dealer.
         const allSales = mockOrders.reduce((sum, order) => sum + order.totalAmount, 0);
         setTotalSales(allSales);
 
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-        const monthSales = mockOrders
+        const monthSalesData = mockOrders
           .filter(order => {
             const orderDate = parseISO(order.orderDate);
             return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
           })
           .reduce((sum, order) => sum + order.totalAmount, 0);
-        setMonthlySales(monthSales);
+        setMonthlySales(monthSalesData);
 
         const pendingCount = mockOrders.filter(order => order.status === 'Placed' || order.status === 'Confirmed').length;
         setPendingOrdersCount(pendingCount);
 
-        // For low stock, using general mockProducts.
-        // Real scenario: filter products managed by this specific dealer.
         const lowStock = mockProducts.filter(p => (p.stock || 0) < LOW_STOCK_THRESHOLD);
         setLowStockItems(lowStock);
 
@@ -149,7 +144,6 @@ export default function DealerDashboardPage() {
 
   return (
     <div className="space-y-8 p-4 md:p-6">
-      {/* 1. Dashboard Overview */}
       <section className="space-y-6">
         <Card className="shadow-lg">
           <CardHeader>
@@ -194,7 +188,7 @@ export default function DealerDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-              <PackageWarning className="h-4 w-4 text-muted-foreground" />
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{lowStockItems.length} items</div>
@@ -273,9 +267,7 @@ export default function DealerDashboardPage() {
         </Card>
       </section>
 
-      {/* Sections for other features - linking to dedicated pages or showing placeholders */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* 2. Order Management */}
         <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Order Management</CardTitle>
@@ -287,7 +279,6 @@ export default function DealerDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* 3. Inventory Management */}
         <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Inventory Management</CardTitle>
@@ -299,7 +290,6 @@ export default function DealerDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* 4. Sales and Revenue Tracking (Placeholder) */}
         <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Sales & Revenue</CardTitle>
@@ -311,7 +301,6 @@ export default function DealerDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* 5. Customer Management (Placeholder) */}
         <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Customer Management</CardTitle>
@@ -323,7 +312,6 @@ export default function DealerDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* 6. Promotions and Discounts (Placeholder) */}
         <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Promotions & Discounts</CardTitle>
@@ -335,7 +323,6 @@ export default function DealerDashboardPage() {
             </CardContent>
         </Card>
         
-        {/* 7. Communication Tools (Placeholder) */}
         <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Communication Tools</CardTitle>
@@ -347,7 +334,6 @@ export default function DealerDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* 8. Profile and Settings */}
         <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Profile & Settings</CardTitle>
@@ -359,7 +345,6 @@ export default function DealerDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* 9. Analytics and Insights (Placeholder for more) */}
          <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Advanced Analytics</CardTitle>
@@ -371,7 +356,6 @@ export default function DealerDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* 10. Help and Resources (Placeholder) */}
         <Card className="hover:shadow-lg transition-shadow opacity-70 cursor-not-allowed">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-semibold">Help & Resources</CardTitle>
@@ -386,3 +370,5 @@ export default function DealerDashboardPage() {
     </div>
   );
 }
+
+    

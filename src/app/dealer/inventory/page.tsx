@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockProducts, mockCategories } from "@/lib/mockData";
 import type { Product } from "@/types";
-import { Search, Filter, Edit, PlusCircle, PackageWarning, PackageCheck, Archive, ArrowLeft } from "lucide-react";
+import { Search, Filter, Edit, PlusCircle, PackageX, PackageCheck, Archive, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
@@ -155,7 +155,7 @@ export default function DealerInventoryPage() {
             </Table>
           ) : (
              <div className="text-center py-10">
-                <PackageWarning className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <PackageX className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No products match your filters.</p>
             </div>
           )}
