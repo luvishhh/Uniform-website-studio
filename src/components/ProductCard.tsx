@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, ShoppingCart, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useEffect, useState } from "react"; // Added React and hooks
+import React, { useEffect, useState } from "react";
 
 interface ProductCardProps {
   product: Product;
@@ -27,7 +27,7 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
     }
   }, []);
 
-  const canPurchase = isClient && currentUserRole !== 'institution';
+  const canPurchase = isClient && currentUserRole !== 'institution' && currentUserRole !== 'dealer';
 
   return (
     <Card className="overflow-hidden h-full flex flex-col group bg-card shadow-lg hover:shadow-xl focus-within:shadow-xl transition-all duration-300 ease-in-out rounded-xl border border-border/30 hover:border-primary/60 focus-within:border-primary/60 relative">
@@ -101,6 +101,13 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
             </Button>
           )}
         </div>
+        {!canPurchase && isClient && (currentUserRole === 'institution' || currentUserRole === 'dealer') && !isAdminView &&(
+            <div className="text-center mt-2">
+                <Badge variant="outline" className="text-xs">
+                    {currentUserRole === 'institution' ? 'Purchasing unavailable for Institutions' : 'Login as student/guest to purchase'}
+                </Badge>
+            </div>
+        )}
       </CardContent>
 
       {isAdminView && (
@@ -120,5 +127,3 @@ export default function ProductCard({ product, isAdminView = false }: ProductCar
     </Card>
   );
 }
-
-    

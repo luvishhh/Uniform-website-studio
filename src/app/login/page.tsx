@@ -36,7 +36,7 @@ export default function LoginPage() {
             localStorage.setItem('unishop_user_role', 'admin');
             localStorage.setItem('unishop_user_displayName', 'Admin User');
             localStorage.setItem('unishop_user_id', 'admin_local_mock_id');
-            window.dispatchEvent(new CustomEvent('authChange')); // Dispatch event
+            window.dispatchEvent(new CustomEvent('authChange'));
         }
         toast({
             title: "Admin Login Successful",
@@ -74,11 +74,15 @@ export default function LoginPage() {
           localStorage.setItem('unishop_user_role', result.user.role);
           localStorage.setItem('unishop_user_displayName', displayName);
           localStorage.setItem('unishop_user_id', result.user.id);
-          window.dispatchEvent(new CustomEvent('authChange')); // Dispatch event
+          window.dispatchEvent(new CustomEvent('authChange'));
         }
         
         if (result.user.role === 'admin') {
             router.push('/admin/dashboard'); 
+        } else if (result.user.role === 'institution') {
+            router.push('/institution/dashboard');
+        } else if (result.user.role === 'dealer') {
+            router.push('/dealer/dashboard');
         } else {
             router.push('/'); 
         }
@@ -198,7 +202,7 @@ export default function LoginPage() {
                   </Link>.
                 </p>
                  <p>
-                  <Link href="/forgot-password" // Placeholder for forgot password
+                  <Link href="/forgot-password" 
                     className="font-medium text-primary hover:underline text-xs">
                     Forgot Password?
                   </Link>

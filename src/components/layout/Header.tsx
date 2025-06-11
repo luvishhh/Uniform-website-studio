@@ -65,7 +65,6 @@ export default function Header() {
     if (isClient) {
       checkAuthState();
       window.addEventListener('authChange', checkAuthState);
-      // Also re-check on pathname change for SPA navigations that might affect state indirectly
       if (pathname) checkAuthState();
     }
     return () => {
@@ -160,8 +159,20 @@ export default function Header() {
             key="/institution/dashboard"
             href="/institution/dashboard"
             label="Institution Hub"
-            icon={LayoutDashboard} // Or Building icon
+            icon={LayoutDashboard} 
             isActive={pathname.startsWith('/institution')}
+            onClick={handleLinkClick}
+            className={mobileClass}
+          />
+        );
+      } else if (currentUserRole === 'dealer') {
+        linksToRender.push(
+          <NavLinkItem
+            key="/dealer/dashboard"
+            href="/dealer/dashboard"
+            label="Dealer Portal"
+            icon={Briefcase} 
+            isActive={pathname.startsWith('/dealer')}
             onClick={handleLinkClick}
             className={mobileClass}
           />
@@ -196,7 +207,7 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center space-x-2 md:space-x-3">
-         {currentUserRole !== 'institution' && (
+         {(currentUserRole !== 'institution' && currentUserRole !== 'dealer') && (
             <Link href="/cart" passHref>
               <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -236,11 +247,16 @@ export default function Header() {
                 )}
                 {currentUserRole === 'institution' && (
                   <DropdownMenuItem asChild>
-                    <Link href="/institution/dashboard" className="flex items-center gap-2 py-2"><LayoutDashboard className="h-4 w-4 text-muted-foreground"/>Institution Dashboard</Link>
+                    <Link href="/institution/dashboard" className="flex items-center gap-2 py-2"><LayoutDashboard className="h-4 w-4 text-muted-foreground"/>Institution Hub</Link>
+                  </DropdownMenuItem>
+                )}
+                {currentUserRole === 'dealer' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/dealer/dashboard" className="flex items-center gap-2 py-2"><Briefcase className="h-4 w-4 text-muted-foreground"/>Dealer Portal</Link>
                   </DropdownMenuItem>
                 )}
 
-                {(currentUserRole !== 'admin' && currentUserRole !== 'institution') && (
+                {(currentUserRole !== 'admin' && currentUserRole !== 'institution' && currentUserRole !== 'dealer') && (
                   <>
                     <DropdownMenuItem asChild>
                       <Link href="/profile" onClick={() => router.push('/profile?tab=orders')} className="flex items-center gap-2 py-2"><Package className="h-4 w-4 text-muted-foreground"/> Order History</Link>
@@ -311,8 +327,13 @@ export default function Header() {
                            <Link href="/institution/dashboard"><LayoutDashboard className="mr-2 h-5 w-5"/> Institution Dashboard</Link>
                          </Button>
                       )}
+                       {currentUserRole === 'dealer' && (
+                         <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/dealer/dashboard'); }}>
+                           <Link href="/dealer/dashboard"><Briefcase className="mr-2 h-5 w-5"/> Dealer Portal</Link>
+                         </Button>
+                      )}
 
-                      {(currentUserRole !== 'admin' && currentUserRole !== 'institution') && (
+                      {(currentUserRole !== 'admin' && currentUserRole !== 'institution' && currentUserRole !== 'dealer') && (
                         <>
                           <Button className="w-full justify-start text-base py-3 px-4" variant="ghost" asChild onClick={() => { setIsMobileMenuOpen(false); router.push('/profile?tab=orders'); }}>
                             <Link href="/profile?tab=orders"><Package className="mr-2 h-5 w-5"/> Order History</Link>
@@ -356,5 +377,3 @@ export default function Header() {
 }
 
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
-
-    

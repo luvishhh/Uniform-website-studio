@@ -9,9 +9,9 @@ import { Separator } from "@/components/ui/separator";
 import { mockProducts, getProductById } from "@/lib/mockData";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, ArrowLeft, Star, MessageSquare } from "lucide-react";
+import { ShoppingCart, ArrowLeft, Star, MessageSquare, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import React, { useEffect, useState } from "react"; // Added React and hooks
+import React, { useEffect, useState } from "react";
 
 // Dummy Label component for Select
 const Label = ({htmlFor, children, className}: {htmlFor: string, children: React.ReactNode, className?:string}) => (
@@ -32,7 +32,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     }
   }, []);
 
-
   if (!product) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -51,7 +50,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   }
 
   const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
-  const canPurchase = isClient && currentUserRole !== 'institution';
+  const canPurchase = isClient && currentUserRole !== 'institution' && currentUserRole !== 'dealer';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -66,7 +65,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Product Image Gallery */}
           <div className="space-y-4">
             <div className="aspect-square relative w-full rounded-lg overflow-hidden shadow-lg border">
               <Image
@@ -79,7 +77,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 data-ai-hint={product['data-ai-hint']}
               />
             </div>
-            {/* Thumbnails (mock) */}
             <div className="grid grid-cols-4 gap-2">
               {[1,2,3,4].map(i => (
                 <div key={i} className="aspect-square relative w-full rounded-md overflow-hidden border hover:border-primary cursor-pointer">
@@ -89,10 +86,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
           </div>
 
-          {/* Product Details */}
           <div className="space-y-6">
             <h1 className="text-3xl md:text-4xl font-bold font-headline">{product.name}</h1>
-
             <div className="flex items-center space-x-2">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
@@ -101,16 +96,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               </div>
               <span className="text-sm text-muted-foreground">(123 Reviews)</span>
             </div>
-
             <p className="text-3xl font-semibold text-primary">${product.price.toFixed(2)}</p>
-
             <Separator />
-
             <div>
               <h3 className="text-lg font-semibold mb-2">Description</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">{product.description}</p>
             </div>
-
             {product.institution && (
               <p className="text-sm"><span className="font-medium">Institution:</span> {product.institution}</p>
             )}
@@ -131,7 +122,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 </Select>
               </div>
             )}
-
             {product.colors && product.colors.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="color-select" className="text-sm font-medium">Color:</Label>
@@ -147,7 +137,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 </Select>
               </div>
             )}
-
             <div className="space-y-2">
                 <Label htmlFor="quantity-select" className="text-sm font-medium">Quantity:</Label>
                 <Select defaultValue="1" disabled={!canPurchase}>
@@ -172,8 +161,17 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 </Button>
               </div>
             )}
-             {!canPurchase && isClient && (
-                <Badge variant="outline" className="mt-4 p-2 text-sm">Purchasing not available for institution accounts.</Badge>
+             {!canPurchase && isClient && currentUserRole === 'institution' && (
+                <Badge variant="outline" className="mt-4 p-3 text-sm bg-blue-50 border-blue-200 text-blue-700 w-full flex items-center gap-2">
+                    <Info className="h-5 w-5" />
+                    <span>Institutions cannot make direct purchases. Please manage your catalog via the Institution Hub.</span>
+                </Badge>
+            )}
+             {!canPurchase && isClient && currentUserRole === 'dealer' && (
+                <Badge variant="outline" className="mt-4 p-3 text-sm bg-orange-50 border-orange-200 text-orange-700 w-full flex items-center gap-2">
+                    <Info className="h-5 w-5" />
+                    <span>Dealers can submit bulk inquiries for products via the Dealer Portal.</span>
+                </Badge>
             )}
           </div>
         </div>
@@ -212,11 +210,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </Button>
           </div>
         </section>
-
       </main>
       <Footer />
     </div>
   );
 }
-
-    
