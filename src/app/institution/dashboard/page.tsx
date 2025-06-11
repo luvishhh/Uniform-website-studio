@@ -45,15 +45,15 @@ export default function InstitutionDashboardPage() {
   const [mostPopularProduct, setMostPopularProduct] = useState<{ name: string; quantity: number }>({ name: "N/A", quantity: 0 });
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-    // Fixed date range to ensure mock data is visible
-    const from = new Date(2023, 6, 1); // July 1, 2023
-    const to = new Date(2023, 11, 31); // December 31, 2023
+    const from = new Date(2023, 6, 1); 
+    const to = new Date(2023, 11, 31); 
     return { from, to };
   });
 
   useEffect(() => {
     const fetchInstitutionData = async () => {
       setIsLoading(true);
+      let institutionData: InstitutionUser | null = null;
       const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
       const storedUserRole = typeof window !== "undefined" ? localStorage.getItem('unishop_user_role') : null;
 
@@ -61,30 +61,47 @@ export default function InstitutionDashboardPage() {
         try {
           const userRes = await fetch(`/api/user/${storedUserId}`);
           if (userRes.ok) {
-            const userData: InstitutionUser = await userRes.json();
-            setCurrentUser(userData);
-            const products = mockProducts.filter(p => 
-              p.institution && 
-              userData.institutionName && 
-              p.institution.toLowerCase() === userData.institutionName.toLowerCase()
-            );
-            setInstitutionProducts(products);
+            const apiUserData: User = await userRes.json();
+            if (apiUserData.role === 'institution') {
+              institutionData = apiUserData as InstitutionUser;
+            } else {
+               console.warn(`User ID ${storedUserId} is not an institution role.`);
+            }
           } else {
-            console.error("Failed to fetch institution details");
-            toast({ title: "Error", description: "Failed to load institution data.", variant: "destructive"});
+            console.warn(`Failed to fetch user data for ID: ${storedUserId}, status: ${userRes.status}`);
           }
         } catch (error) {
-          console.error("Error fetching institution data:", error);
-          toast({ title: "Error", description: "Could not connect to server for institution data.", variant: "destructive"});
+          console.warn("Error fetching logged-in institution from API:", error);
         }
+      }
+
+      if (!institutionData) {
+        console.log("No valid logged-in institution found or role mismatch. Defaulting to 'Greenwood High' (inst_1) for dashboard demonstration.");
+        const defaultInstitution = mockUsers.find(u => u.id === 'inst_1' && u.role === 'institution') as InstitutionUser | undefined;
+        if (defaultInstitution) {
+            institutionData = defaultInstitution;
+        } else {
+            console.error("Default institution 'inst_1' (Greenwood High) not found in mockUsers.");
+        }
+      }
+
+      if (institutionData) {
+        setCurrentUser(institutionData);
+        const products = mockProducts.filter(p => 
+          p.institution && 
+          institutionData.institutionName && 
+          p.institution.toLowerCase() === institutionData.institutionName.toLowerCase()
+        );
+        setInstitutionProducts(products);
       } else {
-         toast({ title: "Access Denied", description: "You are not logged in as an institution.", variant: "destructive"});
-         router.push('/login');
+        console.error("Failed to load any institution data (including default). Dashboard may be empty.");
+        toast({ title: "Error", description: "Could not load institution data for the dashboard.", variant: "destructive"});
       }
       setIsLoading(false);
     };
     fetchInstitutionData();
-  }, [router, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]); // Keeping toast dependency, router is not strictly needed for this demo behavior.
 
   useEffect(() => {
     if (currentUser && currentUser.role === 'institution' && currentUser.institutionName) {
@@ -174,7 +191,13 @@ export default function InstitutionDashboardPage() {
 
     mockOrders.forEach(order => {
       const orderDate = parseISO(order.orderDate);
-      if (dateRange?.from && dateRange?.to && !isWithinInterval(orderDate, { start: dateRange.from, end: dateRange.to })) {
+      let validDateRange = true;
+      if(dateRange?.from && dateRange?.to) {
+        validDateRange = isWithinInterval(orderDate, { start: dateRange.from, end: dateRange.to });
+      } else if (dateRange?.from) {
+        validDateRange = orderDate >= dateRange.from;
+      }
+      if (!validDateRange) {
         return; 
       }
 
@@ -203,7 +226,13 @@ export default function InstitutionDashboardPage() {
 
     mockOrders.forEach(order => {
         const orderDate = parseISO(order.orderDate);
-        if (dateRange?.from && dateRange?.to && !isWithinInterval(orderDate, { start: dateRange.from, end: dateRange.to })) {
+        let validDateRange = true;
+        if(dateRange?.from && dateRange?.to) {
+            validDateRange = isWithinInterval(orderDate, { start: dateRange.from, end: dateRange.to });
+        } else if (dateRange?.from) {
+            validDateRange = orderDate >= dateRange.from;
+        }
+        if (!validDateRange) {
             return;
         }
         order.items.forEach(item => {
@@ -228,6 +257,20 @@ export default function InstitutionDashboardPage() {
       </div>
     );
   }
+  
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[calc(100vh-10rem)]">
+        <Building className="h-12 w-12 text-destructive mr-3" />
+        <div>
+          <p className="text-xl font-semibold">Unable to Load Institution Data</p>
+          <p className="text-muted-foreground">Please ensure you are logged in or try again later.</p>
+          <Button onClick={() => router.push('/login')} className="mt-4">Go to Login</Button>
+        </div>
+      </div>
+    )
+  }
+
 
   return (
     <div className="space-y-8">
@@ -504,7 +547,6 @@ export default function InstitutionDashboardPage() {
         </Card>
       </section>
 
-      {/* Quick Actions section removed */}
 
       <section>
         <h2 className="text-2xl font-bold font-headline mb-6">Uniforms for {currentUser?.institutionName || "Your Institution"}</h2>
@@ -531,3 +573,4 @@ export default function InstitutionDashboardPage() {
     </div>
   );
 }
+
