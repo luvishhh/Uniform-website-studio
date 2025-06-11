@@ -7,16 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockProducts, mockCategories } from "@/lib/mockData";
+import { mockProducts } from "@/lib/mockData"; // Removed mockCategories as it's not used
 import type { Product } from "@/types";
-import { Search, Filter, Edit, PlusCircle, PackageX, PackageCheck, Archive, ArrowLeft } from "lucide-react";
+import { Search, Edit, PlusCircle, PackageX, PackageCheck, Archive, ArrowLeft } from "lucide-react"; // Removed Filter icon
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 const LOW_STOCK_THRESHOLD = 10;
 
 export default function DealerInventoryPage() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<Product['category'] | "all">("all");
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "in_stock">("all");
@@ -42,6 +44,20 @@ export default function DealerInventoryPage() {
   }, [searchTerm, categoryFilter, stockFilter]);
 
   const productCategories: Product['category'][] = ["School", "College"];
+
+  const handleRequestEdit = (productName: string) => {
+    toast({
+        title: "Product Update Request (Mock)",
+        description: `Update request submitted for ${productName}. This would typically go to an admin for approval.`,
+    });
+  };
+
+  const handleRequestRestock = (productName: string) => {
+    toast({
+        title: "Restock Request (Mock)",
+        description: `Restock requested for ${productName}. Admin has been notified.`,
+    });
+  };
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -142,10 +158,10 @@ export default function DealerInventoryPage() {
                     </TableCell>
                     <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" title="Edit Product (Mock)" className="opacity-50 cursor-not-allowed" disabled>
+                      <Button variant="ghost" size="icon" title="Request Product Update (Mock)" onClick={() => handleRequestEdit(product.name)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                       <Button variant="outline" size="xs" title="Request Restock (Mock)" onClick={() => alert(`Restock requested for ${product.name} (mock).`)}>
+                       <Button variant="outline" size="xs" title="Request Restock" onClick={() => handleRequestRestock(product.name)}>
                         <PackageCheck className="h-3 w-3 mr-1"/> Restock
                       </Button>
                     </TableCell>

@@ -9,11 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockOrders, getUserById } from "@/lib/mockData";
 import type { Order } from "@/types";
-import { Search, Filter, Eye, Edit, Download, ShoppingCart, ArrowLeft } from "lucide-react";
+import { Search, Eye, Edit, Download, ShoppingCart, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DealerOrdersPage() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Order['status'] | "all">("all");
 
@@ -33,9 +35,26 @@ export default function DealerOrdersPage() {
   }, [searchTerm, statusFilter]);
 
   const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
-    // Mock update
-    console.log(`Mock update order ${orderId} to status ${newStatus}`);
-    alert(`Order ${orderId} status mock-updated to ${newStatus}.`);
+    toast({
+        title: "Order Status Update (Mock)",
+        description: `Order #${orderId.substring(0,8)} status mock-updated to ${newStatus}.`,
+    });
+    // In a real app, you would make an API call here to update the order status
+    // and then potentially re-fetch or update the local order data.
+  };
+
+  const handleViewDetails = (orderId: string) => {
+    toast({
+        title: "View Order Details (Mock)",
+        description: `Viewing details for Order #${orderId.substring(0,8)}... (Mock Feature)`,
+    });
+  };
+
+  const handleDownloadInvoice = (orderId: string) => {
+    toast({
+        title: "Invoice Download (Mock)",
+        description: `Download initiated for invoice #${orderId.substring(0,8)}... (Mock Feature)`,
+    });
   };
 
   const orderStatuses: Order['status'][] = ['Placed', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
@@ -131,11 +150,11 @@ export default function DealerOrdersPage() {
                         </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" title="View Details (Mock)">
+                      <Button variant="ghost" size="icon" title="View Details" onClick={() => handleViewDetails(order.id)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Select onValueChange={(newStatus) => handleUpdateStatus(order.id, newStatus as Order['status'])} defaultValue={order.status}>
-                        <SelectTrigger className="h-8 w-auto text-xs px-2 py-1 inline-flex items-center">
+                        <SelectTrigger className="h-8 w-auto text-xs px-2 py-1 inline-flex items-center" title="Update Status">
                             <Edit className="h-3 w-3 mr-1"/>
                             <SelectValue/>
                         </SelectTrigger>
@@ -143,7 +162,7 @@ export default function DealerOrdersPage() {
                             {orderStatuses.map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
                         </SelectContent>
                       </Select>
-                      <Button variant="ghost" size="icon" title="Download Invoice (Mock)" onClick={() => alert(`Download invoice for ${order.id} (mock)`)}>
+                      <Button variant="ghost" size="icon" title="Download Invoice" onClick={() => handleDownloadInvoice(order.id)}>
                         <Download className="h-4 w-4" />
                       </Button>
                     </TableCell>
