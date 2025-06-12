@@ -1,46 +1,96 @@
 
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockOrders, getUserById } from "@/lib/mockData";
-import type { Order } from "@/types";
-import { Search, Eye, Edit, Download, ShoppingCart, ArrowLeft } from "lucide-react";
+import { mockOrders as initialMockOrders, getUserById, mockUsers } from "@/lib/mockData";
+import type { Order, OrderStatus, DealerUser } from "@/types";
+import { Search, Eye, Download, ShoppingCart, ArrowLeft, CheckCircle, XCircle, Edit } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
+const defaultDealerForDemo = mockUsers.find(u => u.id === 'deal_1' && u.role === 'dealer') as DealerUser | undefined;
+
 export default function DealerOrdersPage() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Order['status'] | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
+  const [orders, setOrders] = useState<Order[]>(initialMockOrders); // Local state for orders
+  const [currentDealer, setCurrentDealer] = useState<DealerUser | null>(defaultDealerForDemo || null);
+  const [isLoading, setIsLoading] = useState<boolean>(!defaultDealerForDemo);
 
-  const filteredOrders = useMemo(() => {
-    let orders = mockOrders;
-    if (searchTerm) {
-      orders = orders.filter(order =>
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.shippingAddress.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (getUserById(order.userId)?.email || "").toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    if (statusFilter !== "all") {
-      orders = orders.filter(order => order.status === statusFilter);
-    }
-    return orders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
-  }, [searchTerm, statusFilter]);
+  useEffect(() => {
+    const fetchDealer = () => {
+        const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
+        const storedUserRole = typeof window !== "undefined" ? localStorage.getItem('unishop_user_role') : null;
+        let activeUser: DealerUser | null = null;
 
-  const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
+        if (storedUserId && storedUserRole === 'dealer') {
+            const user = getUserById(storedUserId) as DealerUser | undefined;
+            if (user) {
+                activeUser = user;
+            }
+        }
+        
+        if (!activeUser && defaultDealerForDemo) {
+            activeUser = defaultDealerForDemo;
+        }
+        setCurrentDealer(activeUser);
+        setIsLoading(false);
+    };
+    fetchDealer();
+  }, []);
+
+
+  const handleAcceptOrder = (orderId: string) => {
+    if (!currentDealer) {
+        toast({ title: "Error", description: "Dealer information not available.", variant: "destructive" });
+        return;
+    }
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId
+          ? { ...order, status: 'Processing by Dealer', assignedDealerId: currentDealer.id }
+          : order
+      )
+    );
+    toast({
+      title: "Order Accepted",
+      description: `Order #${orderId.substring(0, 8)} has been accepted and assigned to you.`,
+      variant: "default",
+    });
+  };
+
+  const handleRejectOrder = (orderId: string) => {
+     setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId
+          ? { ...order, status: 'Pending Dealer Assignment', assignedDealerId: null, dealerRejectionReason: "Rejected by dealer" } // Or specific status like 'Dealer Rejected'
+          : order
+      )
+    );
+    toast({
+      title: "Order Rejected",
+      description: `Order #${orderId.substring(0, 8)} has been rejected and returned to the pool.`,
+      variant: "default", // Or "destructive" if preferred
+    });
+  };
+
+  const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
     toast({
         title: "Order Status Update (Mock)",
         description: `Order #${orderId.substring(0,8)} status mock-updated to ${newStatus}.`,
     });
-    // In a real app, you would make an API call here to update the order status
-    // and then potentially re-fetch or update the local order data.
   };
 
   const handleViewDetails = (orderId: string) => {
@@ -57,7 +107,43 @@ export default function DealerOrdersPage() {
     });
   };
 
-  const orderStatuses: Order['status'][] = ['Placed', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+  const filteredOrders = useMemo(() => {
+    if (isLoading || !currentDealer) return [];
+
+    let displayOrders = orders.filter(order => {
+        // Show orders awaiting any dealer action
+        if (order.status === 'Pending Dealer Assignment' && !order.assignedDealerId) return true;
+        // Show orders specifically assigned to this dealer for acceptance
+        if (order.status === 'Awaiting Dealer Acceptance' && order.assignedDealerId === currentDealer.id) return true;
+        // Show orders this dealer is currently processing or has processed (for other status updates)
+        if (order.assignedDealerId === currentDealer.id && ['Processing by Dealer', 'Shipped', 'Delivered', 'Cancelled'].includes(order.status)) return true;
+        return false;
+    });
+
+    if (searchTerm) {
+      displayOrders = displayOrders.filter(order =>
+        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.shippingAddress.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (getUserById(order.userId)?.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    if (statusFilter !== "all") {
+      displayOrders = displayOrders.filter(order => order.status === statusFilter);
+    }
+    return displayOrders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+  }, [orders, searchTerm, statusFilter, currentDealer, isLoading]);
+
+  const availableOrderStatuses: OrderStatus[] = ['Pending Dealer Assignment', 'Awaiting Dealer Acceptance', 'Processing by Dealer', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64"><p>Loading dealer orders...</p></div>;
+  }
+  
+  if (!currentDealer) {
+    return <div className="flex justify-center items-center h-64"><p>Could not load dealer information. Please try again.</p></div>;
+  }
+
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -74,7 +160,7 @@ export default function DealerOrdersPage() {
       <Card>
         <CardHeader>
           <CardTitle>Filter Orders</CardTitle>
-          <CardDescription>Search and filter through all orders.</CardDescription>
+          <CardDescription>Search and filter through orders assigned to you or available for acceptance.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-grow">
@@ -87,13 +173,13 @@ export default function DealerOrdersPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as Order['status'] | "all")}>
+          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as OrderStatus | "all")}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Filter by Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              {orderStatuses.map(status => (
+              {availableOrderStatuses.map(status => (
                 <SelectItem key={status} value={status}>{status}</SelectItem>
               ))}
             </SelectContent>
@@ -105,9 +191,7 @@ export default function DealerOrdersPage() {
         <CardHeader>
           <CardTitle>Order List</CardTitle>
           <CardDescription>
-            Viewing {filteredOrders.length} of {mockOrders.length} total orders.
-            <br/>
-            <span className="text-xs text-muted-foreground">(Note: In a real system, dealers would only see orders relevant to them.)</span>
+            Viewing {filteredOrders.length} orders.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -140,8 +224,12 @@ export default function DealerOrdersPage() {
                         className={`capitalize text-xs whitespace-nowrap ${
                             order.status === 'Delivered' ? 'bg-green-100 text-green-700 border-green-200' :
                             order.status === 'Shipped' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                            order.status === 'Placed' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                            order.status === 'Confirmed' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                            order.status === 'Placed' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : // Student perspective, not usually for dealer
+                            order.status === 'Pending Dealer Assignment' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                            order.status === 'Awaiting Dealer Acceptance' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                            order.status === 'Processing by Dealer' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                            order.status === 'Confirmed' ? 'bg-purple-100 text-purple-700 border-purple-200' : // Can be same as processing
+                            order.status === 'Dealer Rejected' ? 'bg-red-100 text-red-500 border-red-200' :
                             order.status === 'Cancelled' ? 'bg-red-100 text-red-700 border-red-200' :
                             'bg-gray-100 text-gray-700 border-gray-200'
                         }`}
@@ -150,31 +238,49 @@ export default function DealerOrdersPage() {
                         </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" title="View Details" onClick={() => handleViewDetails(order.id)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Select onValueChange={(newStatus) => handleUpdateStatus(order.id, newStatus as Order['status'])} defaultValue={order.status}>
-                        <SelectTrigger className="h-8 w-auto text-xs px-2 py-1 inline-flex items-center" title="Update Status">
-                            <Edit className="h-3 w-3 mr-1"/>
-                            <SelectValue/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            {orderStatuses.map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Button variant="ghost" size="icon" title="Download Invoice" onClick={() => handleDownloadInvoice(order.id)}>
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      {(order.status === 'Pending Dealer Assignment' || (order.status === 'Awaiting Dealer Acceptance' && order.assignedDealerId === currentDealer?.id)) ? (
+                        <>
+                          <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-700" title="Accept Order" onClick={() => handleAcceptOrder(order.id)}>
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700" title="Reject Order" onClick={() => handleRejectOrder(order.id)}>
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (order.assignedDealerId === currentDealer?.id && ['Processing by Dealer', 'Shipped', 'Delivered', 'Cancelled'].includes(order.status)) ? (
+                        <>
+                           <Button variant="ghost" size="icon" title="View Details" onClick={() => handleViewDetails(order.id)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Select onValueChange={(newStatus) => handleUpdateStatus(order.id, newStatus as OrderStatus)} defaultValue={order.status} disabled={order.status === 'Delivered' || order.status === 'Cancelled'}>
+                            <SelectTrigger className="h-8 w-auto text-xs px-2 py-1 inline-flex items-center" title="Update Status">
+                                <Edit className="h-3 w-3 mr-1"/>
+                                <SelectValue/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {['Processing by Dealer', 'Shipped', 'Delivered', 'Cancelled'].map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Button variant="ghost" size="icon" title="Download Invoice" onClick={() => handleDownloadInvoice(order.id)}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="ghost" size="icon" title="View Details" onClick={() => handleViewDetails(order.id)}>
+                           <Eye className="h-4 w-4" />
+                         </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
-            <p className="text-center text-muted-foreground py-8">No orders match your filters.</p>
+            <p className="text-center text-muted-foreground py-8">No orders match your filters or require your attention.</p>
           )}
         </CardContent>
       </Card>
     </div>
   );
 }
+

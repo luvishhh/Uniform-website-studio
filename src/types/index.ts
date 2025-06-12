@@ -14,7 +14,6 @@ export type Product = {
   gender: 'Unisex' | 'Boys' | 'Girls';
   imageUrl: string;
   featured?: boolean;
-  // stock?: number; // Removed stock system
   ['data-ai-hint']?: string;
 };
 
@@ -95,13 +94,24 @@ export type CartItem = {
   ['data-ai-hint']?: string;
 };
 
+export type OrderStatus = 
+  | 'Pending Dealer Assignment' // New order, needs a dealer
+  | 'Awaiting Dealer Acceptance' // Offered to a specific dealer
+  | 'Processing by Dealer'       // Dealer accepted
+  | 'Dealer Rejected'            // Dealer rejected, may go back to pool or other logic
+  | 'Placed'                     // Original status, student placed, pre-dealer involvement
+  | 'Confirmed'                  // Order confirmed (could be post-dealer acceptance)
+  | 'Shipped'
+  | 'Delivered'
+  | 'Cancelled';
+
 export type Order = {
   id: string;
   _id?: ObjectId; // For MongoDB
   userId: string; // This should be the string representation of the User's _id
   items: CartItem[];
   totalAmount: number;
-  status: 'Placed' | 'Confirmed' | 'Shipped' | 'Delivered' | 'Cancelled';
+  status: OrderStatus;
   orderDate: string; // Should be ISOString
   shippingAddress: {
     name: string;
@@ -113,6 +123,8 @@ export type Order = {
   };
   paymentMethod: string;
   estimatedDelivery?: string; // Should be ISOString
+  assignedDealerId?: string | null; // ID of the dealer assigned to handle this order
+  dealerRejectionReason?: string; // Optional reason if a dealer rejects
 };
 
 export type Donation = {

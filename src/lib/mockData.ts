@@ -19,7 +19,6 @@ export const mockProducts: Product[] = [
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: true,
-    // stock: 50, // Removed stock
     "data-ai-hint": "school shirt"
   },
   {
@@ -28,13 +27,12 @@ export const mockProducts: Product[] = [
     description: 'Smart navy blue school trousers with an adjustable waistband for a comfortable fit.',
     price: 25,
     category: 'School',
-    institution: 'Greenwood High', // Changed from Oakwood Academy
+    institution: 'Greenwood High', 
     sizes: ['M', 'L', 'XL'],
     colors: ['Navy Blue'],
     gender: 'Boys',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: true,
-    // stock: 35, // Removed stock
     "data-ai-hint": "school trousers"
   },
   {
@@ -49,7 +47,6 @@ export const mockProducts: Product[] = [
     gender: 'Girls',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: false,
-    // stock: 40, // Removed stock
     "data-ai-hint": "school skirt"
   },
   {
@@ -64,7 +61,6 @@ export const mockProducts: Product[] = [
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: true,
-    // stock: 20, // Removed stock
     "data-ai-hint": "college blazer"
   },
   {
@@ -72,13 +68,12 @@ export const mockProducts: Product[] = [
     name: 'Sports T-Shirt - Blue',
     description: 'Breathable sports t-shirt for PE classes and college sports.',
     price: 15,
-    category: 'College', // Changed from School to fit City College better
-    institution: 'City College', // Changed from Oakwood Academy
+    category: 'College', 
+    institution: 'City College', 
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Blue', 'Red', 'Green'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
-    // stock: 100, // Removed stock
     "data-ai-hint": "sports t-shirt"
   },
   {
@@ -92,7 +87,6 @@ export const mockProducts: Product[] = [
     colors: ['White'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
-    // stock: 8, // Removed stock (was low stock example)
     "data-ai-hint": "lab coat"
   },
    {
@@ -101,13 +95,12 @@ export const mockProducts: Product[] = [
     description: 'Comfortable red polo shirt for school students.',
     price: 18,
     category: 'School',
-    institution: 'Greenwood High', // Changed from Sunshine Primary
+    institution: 'Greenwood High', 
     sizes: ['XS', 'S', 'M'],
     colors: ['Red', 'Yellow'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: false,
-    // stock: 60, // Removed stock
     "data-ai-hint": "polo shirt"
   },
   {
@@ -116,13 +109,12 @@ export const mockProducts: Product[] = [
     description: 'Warm grey hoodie with university logo option.',
     price: 45,
     category: 'College',
-    institution: 'City College', // Changed from State University
+    institution: 'City College', 
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     colors: ['Grey', 'Navy'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: true,
-    // stock: 25, // Removed stock
     "data-ai-hint": "university hoodie"
   },
   {
@@ -136,7 +128,6 @@ export const mockProducts: Product[] = [
     colors: ['Navy'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
-    // stock: 5, // Removed stock (was low stock example)
     "data-ai-hint": "school jumper"
   },
   {
@@ -150,7 +141,6 @@ export const mockProducts: Product[] = [
     colors: ['Maroon', 'Gold'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
-    // stock: 70, // Removed stock
     "data-ai-hint": "college scarf"
   },
 ];
@@ -277,15 +267,25 @@ export const mockUsers: User[] = [
     contactNumber: '555-0200',
     businessAddress: '1 Supplier Road, Commerce City, CC 67890, USA',
     gstinNumber: '22AAAAA0000A1Z5',
-    passwordHash: '$2a$10$dummyhashfortestingpurposes', // Mock hash for deal_1
+    passwordHash: '$2a$10$dummyhashfortestingpurposes',
     imageUrl: 'https://placehold.co/100x100.png?text=USI',
+  } as DealerUser,
+  {
+    id: 'deal_2', // Adding a second dealer
+    role: 'dealer',
+    email: 'orders@bestuniforms.biz',
+    dealerName: 'Best Uniforms Co.',
+    contactNumber: '555-0201',
+    businessAddress: '2 Quality Street, Apparel Town, AT 12345, USA',
+    gstinNumber: '23BBBBB1111B2Z6',
+    passwordHash: '$2a$10$anotherdummyhashfortesting',
+    imageUrl: 'https://placehold.co/100x100.png?text=BUC',
   } as DealerUser,
   {
     id: 'admin_1',
     role: 'admin',
     email: 'Lavishkhare@gmail.com',
-    // passwordHash for admin_1 should be: $2a$10$8hG.iAhQ3yJ1.tA3uEwXyOANK8JnLioaS3X.1Y5F8V7E5Zz0wzI0.', // Original: lavish@123
-    passwordHash: '$2a$10$rP6WcE2XyZz4A5B6c7D8eO.dummyhashfortesting', // Placeholder, real one commented out
+    passwordHash: '$2a$10$rP6WcE2XyZz4A5B6c7D8eO.dummyhashfortesting', 
     contactNumber: '555-0001',
   } as AdminUser,
 ];
@@ -305,11 +305,12 @@ export const mockOrders: Order[] = [
       { productId: 'prod_3', name: 'Girls School Skirt - Grey', price: 22, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "school skirt" },
     ],
     totalAmount: 42,
-    status: 'Delivered',
+    status: 'Delivered', // Student perspective
     orderDate: '2023-10-15T10:30:00Z',
     shippingAddress: { name: 'Alice Wonderland', email: 'alice.parent@example.com', street: '123 Rabbit Hole', city: 'Fantasy Land', zip: '12345', country: 'Wonderland' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-10-20',
+    assignedDealerId: 'deal_1', // Example: Was handled by deal_1
   },
   {
     id: 'order_2',
@@ -318,29 +319,31 @@ export const mockOrders: Order[] = [
       { productId: 'prod_4', name: 'College Blazer - Maroon', price: 75, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'M', "data-ai-hint": "college blazer" },
     ],
     totalAmount: 75,
-    status: 'Shipped',
+    status: 'Shipped', // Student perspective
     orderDate: '2023-11-01T14:00:00Z',
     shippingAddress: { name: 'Bob The Builder', email: 'bob.student@example.com', street: '456 Construction Site', city: 'Toolsville', zip: '67890', country: 'BuildWorld' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-11-07',
+    assignedDealerId: 'deal_2', // Example: Was handled by deal_2
   },
   {
     id: 'order_3',
-    userId: 'stud_3', // Carol Danvers (Greenwood High)
+    userId: 'stud_3', 
     items: [
       { productId: 'prod_2', name: 'Navy Blue School Trousers', price: 25, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'M', "data-ai-hint": "school trousers" },
       { productId: 'prod_9', name: 'School Jumper - Navy', price: 35, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'M', "data-ai-hint": "school jumper" },
     ],
     totalAmount: 60,
-    status: 'Placed',
+    status: 'Awaiting Dealer Acceptance', // For dealer_1 to accept/reject
     orderDate: '2023-09-20T09:15:00Z',
     shippingAddress: { name: 'Carol Danvers', email: 'carol.parent@example.com', street: '789 Sky High Apt', city: 'Aerospace City', zip: '11223', country: 'USA' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-09-27',
+    assignedDealerId: 'deal_1',
   },
   {
     id: 'order_4',
-    userId: 'stud_4', // David Banner (Greenwood High)
+    userId: 'stud_4', 
     items: [
       { productId: 'prod_1', name: 'Classic School Shirt - White', price: 20, quantity: 2, imageUrl: 'https://placehold.co/100x100.png', size: 'L', "data-ai-hint": "school shirt" },
       { productId: 'prod_7', name: 'School Polo - Red', price: 18, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'L', "data-ai-hint": "polo shirt" },
@@ -351,38 +354,41 @@ export const mockOrders: Order[] = [
     shippingAddress: { name: 'David Banner', street: '10 Gamma Ray St', city: 'Scienceville', zip: '33445', country: 'USA' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-08-17',
+    assignedDealerId: 'deal_1',
   },
   {
     id: 'order_5',
-    userId: 'stud_5', // Eve Adams (City College)
+    userId: 'stud_5', 
     items: [
       { productId: 'prod_5', name: 'Sports T-Shirt - Blue', price: 15, quantity: 2, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "sports t-shirt" },
       { productId: 'prod_6', name: 'Lab Coat - Standard', price: 30, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "lab coat" },
     ],
     totalAmount: 60,
-    status: 'Shipped',
+    status: 'Processing by Dealer', // deal_2 is processing this
     orderDate: '2023-11-15T16:45:00Z',
     shippingAddress: { name: 'Eve Adams', email: 'eve.student@example.com', street: '2 Eden Gardens', city: 'Paradise City', zip: '55667', country: 'Utopia' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-11-22',
+    assignedDealerId: 'deal_2',
   },
   {
     id: 'order_6',
-    userId: 'stud_6', // Frank Castle (City College)
+    userId: 'stud_6', 
     items: [
       { productId: 'prod_8', name: 'University Hoodie - Grey', price: 45, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'XL', "data-ai-hint": "university hoodie" },
       { productId: 'prod_10', name: 'College Scarf - Striped', price: 12, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'One Size', "data-ai-hint": "college scarf" },
     ],
     totalAmount: 57,
-    status: 'Confirmed',
+    status: 'Pending Dealer Assignment', // Available for any dealer
     orderDate: '2023-07-25T13:00:00Z',
     shippingAddress: { name: 'Frank Castle', street: '1 War Zone Alley', city: 'Vigilante Town', zip: '77889', country: 'USA' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-08-01',
+    assignedDealerId: null,
   },
   {
     id: 'order_7',
-    userId: 'stud_1', // Alice Wonderland (Greenwood High) - repeat order
+    userId: 'stud_1', 
     items: [
       { productId: 'prod_9', name: 'School Jumper - Navy', price: 35, quantity: 2, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "school jumper" },
     ],
@@ -392,10 +398,11 @@ export const mockOrders: Order[] = [
     shippingAddress: { name: 'Alice Wonderland', email: 'alice.parent@example.com', street: '123 Rabbit Hole', city: 'Fantasy Land', zip: '12345', country: 'Wonderland' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-12-10',
+    assignedDealerId: 'deal_1',
   },
   {
     id: 'order_8',
-    userId: 'stud_5', // Eve Adams (City College) - repeat order
+    userId: 'stud_5', 
     items: [
       { productId: 'prod_4', name: 'College Blazer - Maroon', price: 75, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "college blazer" },
     ],
@@ -405,32 +412,44 @@ export const mockOrders: Order[] = [
     shippingAddress: { name: 'Eve Adams', email: 'eve.student@example.com', street: '2 Eden Gardens', city: 'Paradise City', zip: '55667', country: 'Utopia' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-10-12',
+    assignedDealerId: 'deal_2',
   },
-  // Additional orders to make dashboard more lively
   {
     id: 'order_9',
-    userId: 'stud_2', // Bob, City College
+    userId: 'stud_2', 
     items: [ { productId: 'prod_5', name: 'Sports T-Shirt - Blue', price: 15, quantity: 3, imageUrl: 'https://placehold.co/100x100.png', size: 'L', "data-ai-hint": "sports t-shirt" } ],
-    totalAmount: 45, status: 'Placed', orderDate: '2023-07-10T10:00:00Z',
+    totalAmount: 45, status: 'Pending Dealer Assignment', orderDate: '2023-07-10T10:00:00Z', // Available for any dealer
     shippingAddress: { name: 'Bob The Builder', email: 'bob.student@example.com', street: '456 Construction Site', city: 'Toolsville', zip: '67890', country: 'BuildWorld' },
     paymentMethod: 'Mock Razorpay', estimatedDelivery: '2023-07-17',
+    assignedDealerId: null,
   },
   {
     id: 'order_10',
-    userId: 'stud_3', // Carol, Greenwood High
+    userId: 'stud_3', 
     items: [ { productId: 'prod_1', name: 'Classic School Shirt - White', price: 20, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'M', "data-ai-hint": "school shirt" } ],
     totalAmount: 20, status: 'Delivered', orderDate: '2023-08-05T12:00:00Z',
     shippingAddress: { name: 'Carol Danvers', email: 'carol.parent@example.com', street: '789 Sky High Apt', city: 'Aerospace City', zip: '11223', country: 'USA' },
     paymentMethod: 'Mock Razorpay', estimatedDelivery: '2023-08-12',
+    assignedDealerId: 'deal_1',
   },
   {
     id: 'order_11',
-    userId: 'stud_1', // Alice, Greenwood High
+    userId: 'stud_1', 
     items: [ { productId: 'prod_7', name: 'School Polo - Red', price: 18, quantity: 2, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "polo shirt" } ],
-    totalAmount: 36, status: 'Shipped', orderDate: '2023-09-10T14:30:00Z',
+    totalAmount: 36, status: 'Awaiting Dealer Acceptance', orderDate: '2023-09-10T14:30:00Z', // For deal_2 to accept/reject
     shippingAddress: { name: 'Alice Wonderland', email: 'alice.parent@example.com', street: '123 Rabbit Hole', city: 'Fantasy Land', zip: '12345', country: 'Wonderland' },
     paymentMethod: 'Mock Razorpay', estimatedDelivery: '2023-09-17',
+    assignedDealerId: 'deal_2',
   },
+  {
+    id: 'order_12',
+    userId: 'stud_4',
+    items: [ { productId: 'prod_6', name: 'Lab Coat - Standard', price: 30, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'L', "data-ai-hint": "lab coat" } ],
+    totalAmount: 30, status: 'Pending Dealer Assignment', orderDate: '2023-12-10T11:00:00Z',
+    shippingAddress: { name: 'David Banner', street: '10 Gamma Ray St', city: 'Scienceville', zip: '33445', country: 'USA' },
+    paymentMethod: 'Mock Razorpay', estimatedDelivery: '2023-12-17',
+    assignedDealerId: null,
+  }
 ];
 
 
@@ -451,10 +470,6 @@ export const getProductsByCategorySlug = (categorySlug: string): Product[] => {
 
 export const getUserById = (id: string): User | undefined => mockUsers.find(u => u.id === id);
 
-// Helper to simulate password hashing for mock data (DO NOT USE IN PRODUCTION)
-// In a real app, passwords would be hashed on the server during registration.
-// const bcrypt = require('bcryptjs'); // Would be a server-side import
-// export const mockHashPassword = (password: string) => bcrypt.hashSync(password, 10);
-// For simplicity, we'll just store plain text or a fixed dummy hash in mockData for passwordHash.
-// e.g. mockUsers[0].passwordHash = mockHashPassword("password123");
+export const getOrdersByUserId = (userId: string): Order[] => mockOrders.filter(o => o.userId === userId);
+
 

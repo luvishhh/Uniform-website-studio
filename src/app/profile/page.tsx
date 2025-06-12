@@ -5,7 +5,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { User, StudentUser, Order, InstitutionUser, DealerUser, AdminUser } from "@/types";
+import type { User, StudentUser, Order, InstitutionUser, DealerUser, AdminUser, OrderStatus } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -73,10 +73,10 @@ export default function ProfilePage() {
         setCurrentUser(userData);
         setAvatarUrl(userData.imageUrl || `https://placehold.co/100x100.png?text=${getInitials(getUserDisplayName(userData))}`);
 
-        if (userData.role !== 'institution') { // Institutions don't have orders in this model
+        if (userData.role !== 'institution' && userData.role !== 'dealer') { 
             const ordersRes = await fetch(`/api/orders/user/${storedUserId}`);
             if (!ordersRes.ok) {
-            if (ordersRes.status !== 404) {
+            if (ordersRes.status !== 404) { // 404 for no orders is acceptable
                 const errorData = await ordersRes.json();
                 throw new Error(errorData.message || 'Failed to fetch orders');
             }
@@ -86,7 +86,7 @@ export default function ProfilePage() {
             setUserOrders(ordersData);
             }
         } else {
-            setUserOrders([]); // Institutions have no orders
+            setUserOrders([]); 
         }
 
       } catch (error: any) {
@@ -208,7 +208,8 @@ export default function ProfilePage() {
 
   const displayName = getUserDisplayName(currentUser);
   const displayIdentifier = getUserIdentifier(currentUser);
-  const orderStatuses: Order['status'][] = ['Placed', 'Confirmed', 'Shipped', 'Delivered'];
+  const orderProgressStatuses: OrderStatus[] = ['Placed', 'Confirmed', 'Processing by Dealer', 'Shipped', 'Delivered'];
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -247,7 +248,7 @@ export default function ProfilePage() {
                 >
                   <UserCircle className="mr-2 h-4 w-4"/> Personal Details
                 </Button>
-                {currentUser.role !== 'institution' && (
+                {(currentUser.role !== 'institution' && currentUser.role !== 'dealer') && (
                   <Button
                     variant={activeTab === "orders" ? "secondary" : "ghost"}
                     onClick={() => setActiveTab("orders")}
@@ -326,7 +327,7 @@ export default function ProfilePage() {
                 </Card>
               </TabsContent>
 
-              {currentUser.role !== 'institution' && (
+              {(currentUser.role !== 'institution' && currentUser.role !== 'dealer') && (
                 <TabsContent value="orders">
                   <Card className="shadow-lg">
                     <CardHeader>
@@ -343,7 +344,17 @@ export default function ProfilePage() {
                             </div>
                             <Badge
                                 variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'secondary'}
-                                className={`capitalize text-xs mt-2 sm:mt-0 ${order.status === 'Delivered' ? 'bg-green-600 text-white' : order.status === 'Shipped' ? 'bg-blue-500 text-white' : ''}`}
+                                className={`capitalize text-xs mt-2 sm:mt-0 ${
+                                    order.status === 'Delivered' ? 'bg-green-100 text-green-700 border-green-200' :
+                                    order.status === 'Shipped' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                    order.status === 'Processing by Dealer' || order.status === 'Confirmed' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                                    order.status === 'Awaiting Dealer Acceptance' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                                    order.status === 'Pending Dealer Assignment' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                    order.status === 'Placed' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                                    order.status === 'Dealer Rejected' ? 'bg-red-100 text-red-500 border-red-200' :
+                                    order.status === 'Cancelled' ? 'bg-red-100 text-red-700 border-red-200' :
+                                    'bg-gray-100 text-gray-700 border-gray-200'
+                                }`}
                               >
                                 {order.status}
                               </Badge>
@@ -365,8 +376,8 @@ export default function ProfilePage() {
                               <div className="mt-4 pt-4 border-t">
                                   <h5 className="text-sm font-medium mb-3 text-center">Order Progress</h5>
                                   <div className="flex items-center space-x-2 md:space-x-4 overflow-x-auto pb-2">
-                                      {orderStatuses.map((statusStep, index, arr) => {
-                                          const currentStatusIndex = orderStatuses.indexOf(order.status);
+                                      {orderProgressStatuses.map((statusStep, index, arr) => {
+                                          const currentStatusIndex = orderProgressStatuses.indexOf(order.status);
                                           const isCompleted = currentStatusIndex >= index;
                                           const isActive = currentStatusIndex === index;
                                           return (

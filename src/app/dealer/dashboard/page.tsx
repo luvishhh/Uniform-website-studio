@@ -3,13 +3,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { mockUsers, mockOrders, mockProducts, getUserById } from "@/lib/mockData";
-import type { DealerUser, Order, Product } from "@/types";
-import { Briefcase, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as PieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive, TrendingUp, UserCheck, Clock, Download, Building, Eye } from "lucide-react";
+import type { DealerUser, Order, Product, OrderStatus } from "@/types";
+import { Briefcase, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as RechartsPieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive, TrendingUp, UserCheck, Clock, Download, Building, Eye } from "lucide-react"; // Renamed PieChartIcon to avoid conflict
 import Link from "next/link";
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { ResponsiveContainer, LineChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend as RechartsLegend, ComposedChart, Pie, Cell as RechartsCell, PieChart } from 'recharts';
+import { ResponsiveContainer, LineChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend as RechartsLegend, ComposedChart, Pie, Cell as RechartsCell, PieChart as RechartsPieChart } from 'recharts'; // Imported PieChart as RechartsPieChart
 import { format, parseISO, subMonths } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -39,37 +39,37 @@ export default function DealerDashboardPage() {
   const [totalSales, setTotalSales] = useState(0);
   const [monthlySales, setMonthlySales] = useState(0);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-  // Low stock alerts removed as stock system is removed
   const [recentActivity, setRecentActivity] = useState<Order[]>([]);
 
-  useEffect(() => {
-    const fetchDealerDataAndAnalytics = async () => {
-      setIsLoading(true);
-      let activeUser: DealerUser | null = null;
-      const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
-      const storedUserRole = typeof window !== "undefined" ? localStorage.getItem('unishop_user_role') : null;
+ useEffect(() => {
+    const fetchDealer = () => {
+        const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
+        const storedUserRole = typeof window !== "undefined" ? localStorage.getItem('unishop_user_role') : null;
+        let activeUser: DealerUser | null = null;
 
-      if (storedUserId && storedUserRole === 'dealer') {
-        try {
-          const userRes = await fetch(`/api/user/${storedUserId}`);
-          if (userRes.ok) {
-            const userData: DealerUser = await userRes.json();
-            activeUser = userData;
-            setCurrentUser(userData);
-          } else {
-            toast({ title: "Error", description: "Failed to load dealer data. Using demo data.", variant: "destructive" });
-          }
-        } catch (error) {
-          toast({ title: "Error", description: "Could not connect to server for dealer data. Using demo data.", variant: "destructive" });
+        if (storedUserId && storedUserRole === 'dealer') {
+            const user = getUserById(storedUserId) as DealerUser | undefined;
+            if (user) {
+                activeUser = user;
+            }
         }
-      }
-      
-      if (!activeUser && defaultDealerForDemo) {
-        activeUser = defaultDealerForDemo;
-        setCurrentUser(defaultDealerForDemo);
-      }
+        
+        if (!activeUser && defaultDealerForDemo) { // Fallback to demo if no stored user or user not found
+            activeUser = defaultDealerForDemo;
+        }
+        setCurrentUser(activeUser);
+        setIsLoading(false); // Set loading to false after attempting to set user
+    };
+    fetchDealer();
+  }, []);
 
-      if (activeUser) {
+
+  useEffect(() => {
+    if (!currentUser || isLoading) return; // Don't proceed if still loading or no current user
+
+    const fetchDealerDataAndAnalytics = async () => {
+      // Removed setIsLoading(true) from here to avoid flicker if demo user is already set
+      if (currentUser) {
         const allSalesData = mockOrders.reduce((sum, order) => sum + order.totalAmount, 0);
         setTotalSales(allSalesData);
 
@@ -83,17 +83,18 @@ export default function DealerDashboardPage() {
           .reduce((sum, order) => sum + order.totalAmount, 0);
         setMonthlySales(monthSalesData);
 
-        const pendingCount = mockOrders.filter(order => order.status === 'Placed' || order.status === 'Confirmed').length;
+        const pendingCount = mockOrders.filter(order => 
+            (order.status === 'Pending Dealer Assignment' && !order.assignedDealerId) ||
+            (order.status === 'Awaiting Dealer Acceptance' && order.assignedDealerId === currentUser.id)
+        ).length;
         setPendingOrdersCount(pendingCount);
-
-        // Logic for low stock items removed
         
         setRecentActivity(mockOrders.slice(0, 5).sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()));
       }
-      setIsLoading(false);
+      // Removed setIsLoading(false) from here
     };
     fetchDealerDataAndAnalytics();
-  }, [toast]);
+  }, [currentUser, isLoading, toast]); // Added isLoading to dependency array
 
   const salesTrendData = useMemo(() => {
     const last6MonthsSales: { name: string, sales: number }[] = [];
@@ -164,7 +165,7 @@ export default function DealerDashboardPage() {
           </CardHeader>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"> {/* Adjusted grid from 4 to 3 */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Sales (Lifetime)</CardTitle>
@@ -192,10 +193,9 @@ export default function DealerDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{pendingOrdersCount}</div>
-              <p className="text-xs text-muted-foreground">Orders awaiting processing</p>
+              <p className="text-xs text-muted-foreground">Orders awaiting your action</p>
             </CardContent>
           </Card>
-          {/* Low Stock Alerts Card Removed */}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -223,7 +223,7 @@ export default function DealerDashboardPage() {
             <CardContent className="h-[300px]">
                 {topCategoriesData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                        <RechartsPieChart>
                         <Pie data={topCategoriesData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
                             {topCategoriesData.map((entry, index) => (
                             <RechartsCell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -231,7 +231,7 @@ export default function DealerDashboardPage() {
                         </Pie>
                         <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }} formatter={(value) => [`${value} units`, undefined]}/>
                         <RechartsLegend wrapperStyle={{fontSize: "12px"}} layout="vertical" align="right" verticalAlign="middle"/>
-                        </PieChart>
+                        </RechartsPieChart>
                     </ResponsiveContainer>
                 ) : <p className="text-muted-foreground text-center pt-10">No category sales data available.</p>}
             </CardContent>
@@ -241,7 +241,7 @@ export default function DealerDashboardPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest orders placed on the platform.</CardDescription>
+                <CardDescription>Latest orders and important notifications.</CardDescription>
             </CardHeader>
             <CardContent>
                 {recentActivity.length > 0 ? (
@@ -262,7 +262,7 @@ export default function DealerDashboardPage() {
                         ))}
                     </ul>
                 ): (
-                    <p className="text-muted-foreground text-center py-4">No recent orders.</p>
+                    <p className="text-muted-foreground text-center py-4">No recent orders or notifications.</p>
                 )}
             </CardContent>
         </Card>
@@ -277,7 +277,7 @@ export default function DealerDashboardPage() {
                     <ShoppingCart className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground mb-3">View, track, and update orders.</p>
+                    <p className="text-sm text-muted-foreground mb-3">View, accept/reject, and update orders.</p>
                     <Button asChild variant="outline" className="w-full"><Link href="/dealer/orders">Manage Orders <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
                 </CardContent>
             </Card>
@@ -288,7 +288,7 @@ export default function DealerDashboardPage() {
                     <Archive className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground mb-3">View product details (stock removed).</p>
+                    <p className="text-sm text-muted-foreground mb-3">View product details and request restocks.</p>
                     <Button asChild variant="outline" className="w-full"><Link href="/dealer/inventory">View Inventory <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
                 </CardContent>
             </Card>
@@ -361,7 +361,7 @@ export default function DealerDashboardPage() {
                 <CardDescription>Summary of customers related to your sales.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <p className="text-xs text-muted-foreground">(This is a simplified mock view. A real system would show customers specific to your dealership.)</p>
+                <p className="text-xs text-muted-foreground">(This is a simplified mock view.)</p>
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -468,4 +468,3 @@ export default function DealerDashboardPage() {
     </div>
   );
 }
-
