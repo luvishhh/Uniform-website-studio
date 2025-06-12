@@ -108,12 +108,12 @@ export default function AdminAddNewProductPage() {
             </div>
 
 
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-1 gap-6"> {/* Changed to single column as stock is removed */}
               <div>
                 <Label htmlFor="productPrice">Price ($)</Label>
                 <Input id="productPrice" name="price" type="number" step="0.01" placeholder="e.g., 20.00" required />
               </div>
-              {/* Stock Quantity Removed */}
+              {/* Stock Quantity field was previously removed */}
             </div>
             
             <div>

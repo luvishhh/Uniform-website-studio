@@ -14,7 +14,7 @@ export type Product = {
   gender: 'Unisex' | 'Boys' | 'Girls';
   imageUrl: string;
   featured?: boolean;
-  stock?: number; // Added for inventory management
+  // stock?: number; // Removed stock system
   ['data-ai-hint']?: string;
 };
 

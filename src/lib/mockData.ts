@@ -19,7 +19,7 @@ export const mockProducts: Product[] = [
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: true,
-    stock: 50,
+    // stock: 50, // Removed stock
     "data-ai-hint": "school shirt"
   },
   {
@@ -34,7 +34,7 @@ export const mockProducts: Product[] = [
     gender: 'Boys',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: true,
-    stock: 35,
+    // stock: 35, // Removed stock
     "data-ai-hint": "school trousers"
   },
   {
@@ -49,7 +49,7 @@ export const mockProducts: Product[] = [
     gender: 'Girls',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: false,
-    stock: 40,
+    // stock: 40, // Removed stock
     "data-ai-hint": "school skirt"
   },
   {
@@ -64,7 +64,7 @@ export const mockProducts: Product[] = [
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: true,
-    stock: 20,
+    // stock: 20, // Removed stock
     "data-ai-hint": "college blazer"
   },
   {
@@ -78,7 +78,7 @@ export const mockProducts: Product[] = [
     colors: ['Blue', 'Red', 'Green'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
-    stock: 100,
+    // stock: 100, // Removed stock
     "data-ai-hint": "sports t-shirt"
   },
   {
@@ -92,7 +92,7 @@ export const mockProducts: Product[] = [
     colors: ['White'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
-    stock: 8, // Low stock example
+    // stock: 8, // Removed stock (was low stock example)
     "data-ai-hint": "lab coat"
   },
    {
@@ -107,7 +107,7 @@ export const mockProducts: Product[] = [
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: false,
-    stock: 60,
+    // stock: 60, // Removed stock
     "data-ai-hint": "polo shirt"
   },
   {
@@ -122,7 +122,7 @@ export const mockProducts: Product[] = [
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
     featured: true,
-    stock: 25,
+    // stock: 25, // Removed stock
     "data-ai-hint": "university hoodie"
   },
   {
@@ -136,7 +136,7 @@ export const mockProducts: Product[] = [
     colors: ['Navy'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
-    stock: 5, // Low stock example
+    // stock: 5, // Removed stock (was low stock example)
     "data-ai-hint": "school jumper"
   },
   {
@@ -150,7 +150,7 @@ export const mockProducts: Product[] = [
     colors: ['Maroon', 'Gold'],
     gender: 'Unisex',
     imageUrl: 'https://placehold.co/600x400.png',
-    stock: 70,
+    // stock: 70, // Removed stock
     "data-ai-hint": "college scarf"
   },
 ];

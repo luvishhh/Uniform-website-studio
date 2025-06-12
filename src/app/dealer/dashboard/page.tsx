@@ -14,7 +14,6 @@ import { format, parseISO, subMonths } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-const LOW_STOCK_THRESHOLD = 10;
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
 
 const defaultDealerForDemo = mockUsers.find(u => u.id === 'deal_1' && u.role === 'dealer') as DealerUser | undefined;
@@ -40,7 +39,7 @@ export default function DealerDashboardPage() {
   const [totalSales, setTotalSales] = useState(0);
   const [monthlySales, setMonthlySales] = useState(0);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-  const [lowStockItems, setLowStockItems] = useState<Product[]>([]);
+  // Low stock alerts removed as stock system is removed
   const [recentActivity, setRecentActivity] = useState<Order[]>([]);
 
   useEffect(() => {
@@ -87,9 +86,8 @@ export default function DealerDashboardPage() {
         const pendingCount = mockOrders.filter(order => order.status === 'Placed' || order.status === 'Confirmed').length;
         setPendingOrdersCount(pendingCount);
 
-        const lowStock = mockProducts.filter(p => (p.stock || 0) < LOW_STOCK_THRESHOLD);
-        setLowStockItems(lowStock);
-
+        // Logic for low stock items removed
+        
         setRecentActivity(mockOrders.slice(0, 5).sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()));
       }
       setIsLoading(false);
@@ -166,7 +164,7 @@ export default function DealerDashboardPage() {
           </CardHeader>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"> {/* Adjusted grid from 4 to 3 */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Sales (Lifetime)</CardTitle>
@@ -197,16 +195,7 @@ export default function DealerDashboardPage() {
               <p className="text-xs text-muted-foreground">Orders awaiting processing</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{lowStockItems.length} items</div>
-              <p className="text-xs text-muted-foreground">Items below threshold ({LOW_STOCK_THRESHOLD} units)</p>
-            </CardContent>
-          </Card>
+          {/* Low Stock Alerts Card Removed */}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -295,12 +284,12 @@ export default function DealerDashboardPage() {
 
             <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg font-semibold">Inventory Management</CardTitle>
+                    <CardTitle className="text-lg font-semibold">Inventory Overview</CardTitle>
                     <Archive className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground mb-3">Track stock levels and manage products.</p>
-                    <Button asChild variant="outline" className="w-full"><Link href="/dealer/inventory">Manage Inventory <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
+                    <p className="text-sm text-muted-foreground mb-3">View product details (stock removed).</p>
+                    <Button asChild variant="outline" className="w-full"><Link href="/dealer/inventory">View Inventory <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
                 </CardContent>
             </Card>
 
