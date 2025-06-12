@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { mockUsers, mockOrders, mockProducts, getUserById } from "@/lib/mockData";
 import type { DealerUser, Order, Product, OrderStatus } from "@/types";
-import { Briefcase, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as RechartsPieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive, TrendingUp, UserCheck, Clock, Download, Building, Eye } from "lucide-react"; // Renamed PieChartIcon to avoid conflict
+import { Briefcase, ArrowRight, DollarSign, ListOrdered, AlertTriangle, Bell, LineChart as LineChartIcon, PieChart as RechartsPieChartIcon, FileText, Users, Tag, MessageSquare, Settings, BarChart3, HelpCircle, ShoppingCart, Archive, TrendingUp, UserCheck, Clock, Download, Building, Eye, Percent } from "lucide-react"; // Added Percent
 import Link from "next/link";
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { ResponsiveContainer, LineChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend as RechartsLegend, ComposedChart, Pie, Cell as RechartsCell, PieChart as RechartsPieChart } from 'recharts'; // Imported PieChart as RechartsPieChart
+import { ResponsiveContainer, LineChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend as RechartsLegend, ComposedChart, Pie, Cell as RechartsCell, PieChart as RechartsPieChart } from 'recharts';
 import { format, parseISO, subMonths } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ export default function DealerDashboardPage() {
   const [totalSales, setTotalSales] = useState(0);
   const [monthlySales, setMonthlySales] = useState(0);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [lowStockItemCount, setLowStockItemCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState<Order[]>([]);
 
  useEffect(() => {
@@ -65,14 +66,15 @@ export default function DealerDashboardPage() {
 
 
   useEffect(() => {
-    if (!currentUser || isLoading) return; // Don't proceed if still loading or no current user
+    if (!currentUser || isLoading) return; 
 
     const fetchDealerDataAndAnalytics = async () => {
-      // Removed setIsLoading(true) from here to avoid flicker if demo user is already set
       if (currentUser) {
+        // Mock total sales (lifetime) - can be a fixed number or more complex if needed
         const allSalesData = mockOrders.reduce((sum, order) => sum + order.totalAmount, 0);
         setTotalSales(allSalesData);
 
+        // Mock monthly sales
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
         const monthSalesData = mockOrders
@@ -83,18 +85,24 @@ export default function DealerDashboardPage() {
           .reduce((sum, order) => sum + order.totalAmount, 0);
         setMonthlySales(monthSalesData);
 
+        // Pending orders for THIS dealer or generally assignable
         const pendingCount = mockOrders.filter(order => 
             (order.status === 'Pending Dealer Assignment' && !order.assignedDealerId) ||
             (order.status === 'Awaiting Dealer Acceptance' && order.assignedDealerId === currentUser.id)
         ).length;
         setPendingOrdersCount(pendingCount);
         
+        // Mock Low Stock Item Count
+        const lowStockThreshold = 10;
+        const lowStockCount = mockProducts.filter(p => (p.stock || 0) < lowStockThreshold).length;
+        setLowStockItemCount(lowStockCount);
+        
+        // Mock Recent Activity (last 5 orders)
         setRecentActivity(mockOrders.slice(0, 5).sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()));
       }
-      // Removed setIsLoading(false) from here
     };
     fetchDealerDataAndAnalytics();
-  }, [currentUser, isLoading, toast]); // Added isLoading to dependency array
+  }, [currentUser, isLoading, toast]);
 
   const salesTrendData = useMemo(() => {
     const last6MonthsSales: { name: string, sales: number }[] = [];
@@ -153,6 +161,8 @@ export default function DealerDashboardPage() {
     );
   }
 
+  const commissionThisMonth = monthlySales * 0.10;
+
   return (
     <div className="space-y-8 p-4 md:p-6">
       <section className="space-y-6">
@@ -165,7 +175,7 @@ export default function DealerDashboardPage() {
           </CardHeader>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Sales (Lifetime)</CardTitle>
@@ -188,12 +198,32 @@ export default function DealerDashboardPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Commissions (This Month)</CardTitle>
+              <Percent className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${commissionThisMonth.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">Your estimated 10% earnings</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
               <ListOrdered className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{pendingOrdersCount}</div>
               <p className="text-xs text-muted-foreground">Orders awaiting your action</p>
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{lowStockItemCount}</div>
+              <p className="text-xs text-muted-foreground">Items needing restock (mock)</p>
             </CardContent>
           </Card>
         </div>
@@ -319,12 +349,12 @@ export default function DealerDashboardPage() {
                         <p className="text-2xl font-bold">${monthlySales.toFixed(2)}</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">Commissions (Mock)</p>
-                        <p className="text-2xl font-bold">${(monthlySales * 0.1).toFixed(2)}</p> {/* Mock 10% */}
+                        <p className="text-sm text-muted-foreground">Commissions (10%)</p>
+                        <p className="text-2xl font-bold">${(monthlySales * 0.1).toFixed(2)}</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">
                         <p className="text-sm text-muted-foreground">Pending Payouts (Mock)</p>
-                        <p className="text-2xl font-bold">${(monthlySales * 0.05).toFixed(2)}</p> {/* Mock */}
+                        <p className="text-2xl font-bold">${(monthlySales * 0.05).toFixed(2)}</p> 
                     </div>
                 </div>
                 <div>
@@ -468,3 +498,4 @@ export default function DealerDashboardPage() {
     </div>
   );
 }
+
