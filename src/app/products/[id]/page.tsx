@@ -6,15 +6,16 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { mockProducts, getProductById, getReviewsByProductId } from "@/lib/mockData"; // Added getReviewsByProductId
+import { mockProducts, getProductById, getReviewsByProductId } from "@/lib/mockData";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, ArrowLeft, Star, MessageSquare, Info, ThumbsUp, CheckCircle } from "lucide-react"; // Added ThumbsUp, CheckCircle
+import { ShoppingCart, ArrowLeft, Star, MessageSquare, Info, ThumbsUp, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import React, { useEffect, useState, useMemo } from "react";
-import type { Review } from "@/types"; // Added Review type
-import { Progress } from "@/components/ui/progress"; // Added Progress
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar components
+import type { Review } from "@/types";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useParams } from 'next/navigation'; // Import useParams
 
 // Dummy Label component for Select
 const Label = ({htmlFor, children, className}: {htmlFor: string, children: React.ReactNode, className?:string}) => (
@@ -29,8 +30,10 @@ const getInitials = (name: string = "") => {
     return names.map(n => n[0]).join('').toUpperCase() || 'U';
 };
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
-  const product = getProductById(params.id);
+export default function ProductDetailPage() { // Removed params from props
+  const params = useParams<{ id: string }>(); // Use the useParams hook
+  const product = getProductById(params.id); // Access params.id from the hook's return value
+
   const [productReviews, setProductReviews] = useState<Review[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
