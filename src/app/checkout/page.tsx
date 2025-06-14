@@ -114,17 +114,7 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <Label htmlFor="country">Country</Label>
-                  <Select>
-                    <SelectTrigger id="country">
-                      <SelectValue placeholder="Select country" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="us">United States</SelectItem>
-                      <SelectItem value="ca">Canada</SelectItem>
-                      <SelectItem value="gb">United Kingdom</SelectItem>
-                      {/* Add other countries as needed */}
-                    </SelectContent>
-                  </Select>
+                  <Input id="country" placeholder="e.g., United States" />
                 </div>
               </form>
             </section>
@@ -221,3 +211,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
