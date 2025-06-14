@@ -1,5 +1,5 @@
 
-import type { Product, Category, User, Order, CartItem, Donation, StudentUser, InstitutionUser, DealerUser, AdminUser } from '@/types';
+import type { Product, Category, User, Order, CartItem, Donation, StudentUser, InstitutionUser, DealerUser, AdminUser, Review } from '@/types';
 
 export const mockCategories: Category[] = [
   { id: 'cat_school', name: 'School', description: 'High-quality uniforms for school students, designed for comfort and durability.', imageUrl: 'https://placehold.co/600x400.png', slug: 'school', "data-ai-hint": "school students" },
@@ -271,7 +271,7 @@ export const mockUsers: User[] = [
     imageUrl: 'https://placehold.co/100x100.png?text=USI',
   } as DealerUser,
   {
-    id: 'deal_2', // Adding a second dealer
+    id: 'deal_2', 
     role: 'dealer',
     email: 'orders@bestuniforms.biz',
     dealerName: 'Best Uniforms Co.',
@@ -305,12 +305,12 @@ export const mockOrders: Order[] = [
       { productId: 'prod_3', name: 'Girls School Skirt - Grey', price: 22, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "school skirt" },
     ],
     totalAmount: 42,
-    status: 'Delivered', // Student perspective
+    status: 'Delivered', 
     orderDate: '2023-10-15T10:30:00Z',
     shippingAddress: { name: 'Alice Wonderland', email: 'alice.parent@example.com', street: '123 Rabbit Hole', city: 'Fantasy Land', zip: '12345', country: 'Wonderland' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-10-20',
-    assignedDealerId: 'deal_1', // Example: Was handled by deal_1
+    assignedDealerId: 'deal_1', 
   },
   {
     id: 'order_2',
@@ -319,12 +319,12 @@ export const mockOrders: Order[] = [
       { productId: 'prod_4', name: 'College Blazer - Maroon', price: 75, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'M', "data-ai-hint": "college blazer" },
     ],
     totalAmount: 75,
-    status: 'Shipped', // Student perspective
+    status: 'Shipped', 
     orderDate: '2023-11-01T14:00:00Z',
     shippingAddress: { name: 'Bob The Builder', email: 'bob.student@example.com', street: '456 Construction Site', city: 'Toolsville', zip: '67890', country: 'BuildWorld' },
     paymentMethod: 'Mock Razorpay',
     estimatedDelivery: '2023-11-07',
-    assignedDealerId: 'deal_2', // Example: Was handled by deal_2
+    assignedDealerId: 'deal_2', 
   },
   {
     id: 'order_3',
@@ -334,7 +334,7 @@ export const mockOrders: Order[] = [
       { productId: 'prod_9', name: 'School Jumper - Navy', price: 35, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'M', "data-ai-hint": "school jumper" },
     ],
     totalAmount: 60,
-    status: 'Awaiting Dealer Acceptance', // For dealer_1 to accept/reject
+    status: 'Awaiting Dealer Acceptance', 
     orderDate: '2023-09-20T09:15:00Z',
     shippingAddress: { name: 'Carol Danvers', email: 'carol.parent@example.com', street: '789 Sky High Apt', city: 'Aerospace City', zip: '11223', country: 'USA' },
     paymentMethod: 'Mock Razorpay',
@@ -364,7 +364,7 @@ export const mockOrders: Order[] = [
       { productId: 'prod_6', name: 'Lab Coat - Standard', price: 30, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "lab coat" },
     ],
     totalAmount: 60,
-    status: 'Processing by Dealer', // deal_2 is processing this
+    status: 'Processing by Dealer', 
     orderDate: '2023-11-15T16:45:00Z',
     shippingAddress: { name: 'Eve Adams', email: 'eve.student@example.com', street: '2 Eden Gardens', city: 'Paradise City', zip: '55667', country: 'Utopia' },
     paymentMethod: 'Mock Razorpay',
@@ -379,7 +379,7 @@ export const mockOrders: Order[] = [
       { productId: 'prod_10', name: 'College Scarf - Striped', price: 12, quantity: 1, imageUrl: 'https://placehold.co/100x100.png', size: 'One Size', "data-ai-hint": "college scarf" },
     ],
     totalAmount: 57,
-    status: 'Pending Dealer Assignment', // Available for any dealer
+    status: 'Pending Dealer Assignment', 
     orderDate: '2023-07-25T13:00:00Z',
     shippingAddress: { name: 'Frank Castle', street: '1 War Zone Alley', city: 'Vigilante Town', zip: '77889', country: 'USA' },
     paymentMethod: 'Mock Razorpay',
@@ -418,7 +418,7 @@ export const mockOrders: Order[] = [
     id: 'order_9',
     userId: 'stud_2', 
     items: [ { productId: 'prod_5', name: 'Sports T-Shirt - Blue', price: 15, quantity: 3, imageUrl: 'https://placehold.co/100x100.png', size: 'L', "data-ai-hint": "sports t-shirt" } ],
-    totalAmount: 45, status: 'Pending Dealer Assignment', orderDate: '2023-07-10T10:00:00Z', // Available for any dealer
+    totalAmount: 45, status: 'Pending Dealer Assignment', orderDate: '2023-07-10T10:00:00Z', 
     shippingAddress: { name: 'Bob The Builder', email: 'bob.student@example.com', street: '456 Construction Site', city: 'Toolsville', zip: '67890', country: 'BuildWorld' },
     paymentMethod: 'Mock Razorpay', estimatedDelivery: '2023-07-17',
     assignedDealerId: null,
@@ -436,7 +436,7 @@ export const mockOrders: Order[] = [
     id: 'order_11',
     userId: 'stud_1', 
     items: [ { productId: 'prod_7', name: 'School Polo - Red', price: 18, quantity: 2, imageUrl: 'https://placehold.co/100x100.png', size: 'S', "data-ai-hint": "polo shirt" } ],
-    totalAmount: 36, status: 'Awaiting Dealer Acceptance', orderDate: '2023-09-10T14:30:00Z', // For deal_2 to accept/reject
+    totalAmount: 36, status: 'Awaiting Dealer Acceptance', orderDate: '2023-09-10T14:30:00Z', 
     shippingAddress: { name: 'Alice Wonderland', email: 'alice.parent@example.com', street: '123 Rabbit Hole', city: 'Fantasy Land', zip: '12345', country: 'Wonderland' },
     paymentMethod: 'Mock Razorpay', estimatedDelivery: '2023-09-17',
     assignedDealerId: 'deal_2',
@@ -454,9 +454,20 @@ export const mockOrders: Order[] = [
 
 
 export const mockDonations: Donation[] = [
-  { id: 'don_1', uniformType: 'School Shirts', quantity: 10, condition: 'Good', contactName: 'Jane Doe', contactEmail: 'jane@example.com', submissionDate: '2023-11-10', status: 'Pending' },
-  { id: 'don_2', uniformType: 'College Trousers', quantity: 5, condition: 'Like New', contactName: 'John Smith', contactEmail: 'john.s@example.com', submissionDate: '2023-11-05', status: 'Collected' },
-  { id: 'don_3', uniformType: 'School Skirts', quantity: 15, condition: 'Fair', contactName: 'Emily White', contactEmail: 'emily.w@example.com', submissionDate: '2023-10-20', status: 'Distributed' },
+  { id: 'don_1', uniformType: 'School Shirts', quantity: 10, condition: 'Good', contactName: 'Jane Doe', contactEmail: 'jane@example.com', submissionDate: '2023-11-10T10:00:00Z', status: 'Pending' },
+  { id: 'don_2', uniformType: 'College Trousers', quantity: 5, condition: 'Like New', contactName: 'John Smith', contactEmail: 'john.s@example.com', submissionDate: '2023-11-05T11:00:00Z', status: 'Collected' },
+  { id: 'don_3', uniformType: 'School Skirts', quantity: 15, condition: 'Fair', contactName: 'Emily White', contactEmail: 'emily.w@example.com', submissionDate: '2023-10-20T12:00:00Z', status: 'Distributed' },
+];
+
+export const mockReviews: Review[] = [
+  { id: 'rev_1', productId: 'prod_1', userName: 'Alice Parent', rating: 5, title: 'Excellent Quality!', comment: 'The fabric is great and it fits my child perfectly. Very durable for school wear.', date: '2023-10-20T10:00:00Z', verifiedPurchase: true, avatarUrl: 'https://placehold.co/40x40.png?text=AP' },
+  { id: 'rev_2', productId: 'prod_1', userName: 'Bob Student', rating: 4, title: 'Good Shirt', comment: 'Comfortable shirt, good for daily use. Color is holding up well after washes.', date: '2023-10-22T14:30:00Z', verifiedPurchase: true, avatarUrl: 'https://placehold.co/40x40.png?text=BS' },
+  { id: 'rev_3', productId: 'prod_4', userName: 'Eve A.', rating: 5, title: 'Very Professional Blazer', comment: 'Looks very smart for college events. The fit is true to size and quality is top-notch.', date: '2023-11-05T09:15:00Z', verifiedPurchase: true, avatarUrl: 'https://placehold.co/40x40.png?text=EA' },
+  { id: 'rev_4', productId: 'prod_1', userName: 'David Parent', rating: 3, title: 'It\'s Okay', comment: 'Decent shirt for the price, but a bit thinner than I expected.', date: '2023-08-15T11:00:00Z', verifiedPurchase: false },
+  { id: 'rev_5', productId: 'prod_4', userName: 'Frank C.', rating: 4, title: 'Good, but a bit pricey', comment: 'The blazer is high quality and looks great. Just wish it was a little less expensive.', date: '2023-07-30T17:00:00Z', verifiedPurchase: true, avatarUrl: 'https://placehold.co/40x40.png?text=FC' },
+  { id: 'rev_6', productId: 'prod_1', userName: 'New User', rating: 4, title: 'Happy with purchase', comment: 'Solid school shirt, meets expectations.', date: '2023-12-01T08:00:00Z', verifiedPurchase: true },
+  { id: 'rev_7', productId: 'prod_2', userName: 'Carol Danvers', rating: 5, title: 'Perfect Trousers', comment: 'These fit my son perfectly and are very sturdy. Great for active kids.', date: '2023-09-25T18:00:00Z', verifiedPurchase: true, avatarUrl: 'https://placehold.co/40x40.png?text=CD'},
+  { id: 'rev_8', productId: 'prod_5', userName: 'Bob The Builder', rating: 4, title: 'Good for Sports', comment: 'Lightweight and breathable, perfect for PE.', date: '2023-11-20T10:00:00Z', verifiedPurchase: true, avatarUrl: 'https://placehold.co/40x40.png?text=BB'},
 ];
 
 
@@ -472,4 +483,5 @@ export const getUserById = (id: string): User | undefined => mockUsers.find(u =>
 
 export const getOrdersByUserId = (userId: string): Order[] => mockOrders.filter(o => o.userId === userId);
 
+export const getReviewsByProductId = (productId: string): Review[] => mockReviews.filter(review => review.productId === productId);
 

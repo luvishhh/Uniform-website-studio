@@ -95,12 +95,12 @@ export type CartItem = {
 };
 
 export type OrderStatus = 
-  | 'Pending Dealer Assignment' // New order, needs a dealer
-  | 'Awaiting Dealer Acceptance' // Offered to a specific dealer
-  | 'Processing by Dealer'       // Dealer accepted
-  | 'Dealer Rejected'            // Dealer rejected, may go back to pool or other logic
-  | 'Placed'                     // Original status, student placed, pre-dealer involvement
-  | 'Confirmed'                  // Order confirmed (could be post-dealer acceptance)
+  | 'Pending Dealer Assignment' 
+  | 'Awaiting Dealer Acceptance' 
+  | 'Processing by Dealer'       
+  | 'Dealer Rejected'            
+  | 'Placed'                     
+  | 'Confirmed'                  
   | 'Shipped'
   | 'Delivered'
   | 'Cancelled';
@@ -108,7 +108,7 @@ export type OrderStatus =
 export type Order = {
   id: string;
   _id?: ObjectId; // For MongoDB
-  userId: string; // This should be the string representation of the User's _id
+  userId: string; 
   items: CartItem[];
   totalAmount: number;
   status: OrderStatus;
@@ -123,8 +123,8 @@ export type Order = {
   };
   paymentMethod: string;
   estimatedDelivery?: string; // Should be ISOString
-  assignedDealerId?: string | null; // ID of the dealer assigned to handle this order
-  dealerRejectionReason?: string; // Optional reason if a dealer rejects
+  assignedDealerId?: string | null; 
+  dealerRejectionReason?: string; 
 };
 
 export type Donation = {
@@ -140,3 +140,16 @@ export type Donation = {
   status: 'Pending' | 'Collected' | 'Distributed';
 };
 
+export type Review = {
+  id: string;
+  _id?: ObjectId; // For MongoDB
+  productId: string;
+  userId?: string; // Optional: if reviews can be anonymous or linked to users
+  userName: string;
+  avatarUrl?: string; // Optional for user avatar
+  rating: number; // 1 to 5
+  title: string;
+  comment: string;
+  date: string; // ISOString for review date
+  verifiedPurchase?: boolean;
+};
