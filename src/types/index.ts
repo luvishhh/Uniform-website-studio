@@ -103,7 +103,8 @@ export type OrderStatus =
   | 'Confirmed'                  
   | 'Shipped'
   | 'Delivered'
-  | 'Cancelled';
+  | 'Cancelled'
+  | 'Pending Payment'; // Added for payment gateway flow
 
 export type Order = {
   id: string;
@@ -124,7 +125,11 @@ export type Order = {
   paymentMethod: string;
   estimatedDelivery?: string; // Should be ISOString
   assignedDealerId?: string | null; 
-  dealerRejectionReason?: string; 
+  dealerRejectionReason?: string;
+  // Razorpay specific fields (optional)
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
 };
 
 export type Donation = {
