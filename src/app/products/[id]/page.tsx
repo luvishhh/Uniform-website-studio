@@ -16,7 +16,9 @@ import type { Review } from "@/types";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useParams } from 'next/navigation';
-import { Card } from "@/components/ui/card"; // Added import for Card
+import { Card } from "@/components/ui/card";
+import { useCart } from "@/contexts/CartContext"; // Added
+import { useToast } from "@/hooks/use-toast"; // Added
 
 // Dummy Label component for Select
 const Label = ({htmlFor, children, className}: {htmlFor: string, children: React.ReactNode, className?:string}) => (
@@ -34,6 +36,12 @@ const getInitials = (name: string = "") => {
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const product = getProductById(params.id);
+  const { addToCart } = useCart(); // Added
+  const { toast } = useToast(); // Added
+
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(product?.sizes?.[0]);
+  const [selectedColor, setSelectedColor] = useState<string | undefined>(product?.colors?.[0]);
+  const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
 
   const [productReviews, setProductReviews] = useState<Review[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
@@ -46,12 +54,19 @@ export default function ProductDetailPage() {
     }
     if (product) {
         setProductReviews(getReviewsByProductId(product.id));
+        // Initialize selected size and color if available
+        if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+            setSelectedSize(product.sizes[0]);
+        }
+        if (product.colors && product.colors.length > 0 && !selectedColor) {
+            setSelectedColor(product.colors[0]);
+        }
     }
-  }, [product]);
+  }, [product, selectedSize, selectedColor]);
 
-  const { averageRating, totalReviews, ratingDistribution, ratingCounts } = useMemo(() => {
+  const { averageRating, totalReviews, ratingDistribution } = useMemo(() => { // Removed ratingCounts as it's not used in UI
     if (!productReviews.length) {
-      return { averageRating: 0, totalReviews: 0, ratingDistribution: [], ratingCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+      return { averageRating: 0, totalReviews: 0, ratingDistribution: [] };
     }
     const total = productReviews.reduce((acc, review) => acc + review.rating, 0);
     const avg = total / productReviews.length;
@@ -64,9 +79,14 @@ export default function ProductDetailPage() {
       count: counts[star] || 0,
       percentage: productReviews.length > 0 ? ((counts[star] || 0) / productReviews.length) * 100 : 0,
     }));
-    return { averageRating: avg, totalReviews: productReviews.length, ratingDistribution: distribution, ratingCounts: counts };
+    return { averageRating: avg, totalReviews: productReviews.length, ratingDistribution: distribution };
   }, [productReviews]);
 
+  const handleAddToCart = () => {
+    if (product) {
+      addToCart(product, selectedQuantity, selectedSize, selectedColor);
+    }
+  };
 
   if (!product) {
     return (
@@ -148,7 +168,11 @@ export default function ProductDetailPage() {
             {product.sizes && product.sizes.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="size-select" className="text-sm font-medium">Size:</Label>
-                <Select disabled={!canPurchaseOrReview}>
+                <Select
+                  value={selectedSize}
+                  onValueChange={setSelectedSize}
+                  disabled={!canPurchaseOrReview}
+                >
                   <SelectTrigger id="size-select" className="w-full md:w-1/2">
                     <SelectValue placeholder="Select size" />
                   </SelectTrigger>
@@ -163,7 +187,11 @@ export default function ProductDetailPage() {
             {product.colors && product.colors.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="color-select" className="text-sm font-medium">Color:</Label>
-                <Select disabled={!canPurchaseOrReview}>
+                <Select
+                  value={selectedColor}
+                  onValueChange={setSelectedColor}
+                  disabled={!canPurchaseOrReview}
+                >
                   <SelectTrigger id="color-select" className="w-full md:w-1/2">
                     <SelectValue placeholder="Select color" />
                   </SelectTrigger>
@@ -177,12 +205,16 @@ export default function ProductDetailPage() {
             )}
             <div className="space-y-2">
                 <Label htmlFor="quantity-select" className="text-sm font-medium">Quantity:</Label>
-                <Select defaultValue="1" disabled={!canPurchaseOrReview}>
+                <Select
+                  value={String(selectedQuantity)}
+                  onValueChange={(val) => setSelectedQuantity(Number(val))}
+                  disabled={!canPurchaseOrReview}
+                >
                   <SelectTrigger id="quantity-select" className="w-full md:w-1/2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[1,2,3,4,5].map(q => (
+                    {[1,2,3,4,5,6,7,8,9,10].map(q => ( // Increased quantity options
                       <SelectItem key={q} value={String(q)}>{q}</SelectItem>
                     ))}
                   </SelectContent>
@@ -191,10 +223,16 @@ export default function ProductDetailPage() {
 
             {canPurchaseOrReview && (
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button size="lg" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Button size="lg" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleAddToCart}>
                   <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
                 </Button>
-                <Button size="lg" variant="outline" className="flex-1">
+                <Button size="lg" variant="outline" className="flex-1" onClick={() => {
+                    if (product) {
+                        addToCart(product, selectedQuantity, selectedSize, selectedColor);
+                        // Wait a tick for context to update localStorage, then navigate
+                        setTimeout(() => router.push('/cart'), 100);
+                    }
+                }}>
                   Buy Now
                 </Button>
               </div>
@@ -243,7 +281,7 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
                  {canPurchaseOrReview && (
-                    <Button variant="outline" className="w-full mt-6" onClick={() => alert('Write a review (mock)')}>
+                    <Button variant="outline" className="w-full mt-6" onClick={() => toast({title: "Feature not implemented", description:"Writing reviews is a mock action for now."})}>
                         <MessageSquare className="mr-2 h-4 w-4" /> Write a Review
                     </Button>
                  )}
@@ -293,7 +331,7 @@ export default function ProductDetailPage() {
                 <h3 className="text-xl font-semibold mb-2">No Reviews Yet</h3>
                 <p className="text-muted-foreground mb-4">Be the first to review this product!</p>
                 {canPurchaseOrReview && (
-                    <Button variant="default" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => alert('Write a review (mock)')}>
+                    <Button variant="default" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => toast({title: "Feature not implemented", description:"Writing reviews is a mock action for now."})}>
                         Write a Review
                     </Button>
                 )}

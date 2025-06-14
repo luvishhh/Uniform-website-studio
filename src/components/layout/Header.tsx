@@ -17,6 +17,8 @@ import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlu
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from '@/contexts/CartContext'; // Added
+import { Badge } from '@/components/ui/badge'; // Added for cart count
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
@@ -28,6 +30,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const { getItemCount } = useCart(); // Added
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
@@ -35,6 +38,7 @@ export default function Header() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0); // Added
 
   const checkAuthState = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -64,15 +68,17 @@ export default function Header() {
   useEffect(() => {
     if (isClient) {
       checkAuthState();
+      setCartItemCount(getItemCount()); // Update cart count on client mount and when cart changes
       window.addEventListener('authChange', checkAuthState);
-      if (pathname) checkAuthState();
+      if (pathname) checkAuthState(); // Re-check on pathname change
     }
     return () => {
       if (isClient && typeof window !== "undefined") {
         window.removeEventListener('authChange', checkAuthState);
       }
     };
-  }, [isClient, pathname, checkAuthState]);
+  }, [isClient, pathname, checkAuthState, getItemCount]);
+
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -188,9 +194,9 @@ export default function Header() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
           <Logo />
           <div className="flex items-center space-x-2">
-            <div className="h-9 w-9 animate-pulse rounded-md bg-muted"></div>
-            <div className="h-9 w-9 animate-pulse rounded-md bg-muted"></div>
-            <div className="h-9 w-9 animate-pulse rounded-md bg-muted md:hidden"></div>
+            <div className="h-9 w-9 animate-pulse rounded-md bg-muted"></div> {/* Cart placeholder */}
+            <div className="h-9 w-9 animate-pulse rounded-md bg-muted"></div> {/* User placeholder */}
+            <div className="h-9 w-9 animate-pulse rounded-md bg-muted md:hidden"></div> {/* Mobile menu placeholder */}
           </div>
         </div>
       </header>
@@ -211,6 +217,11 @@ export default function Header() {
             <Link href="/cart" passHref>
               <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative">
                 <ShoppingCart className="h-5 w-5" />
+                {cartItemCount > 0 && (
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">
+                    {cartItemCount}
+                  </Badge>
+                )}
               </Button>
             </Link>
           )}
