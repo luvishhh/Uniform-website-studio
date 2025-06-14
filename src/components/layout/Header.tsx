@@ -17,20 +17,22 @@ import { Menu, ShoppingCart, User as UserIcon, ChevronDown, ShieldCheck, UserPlu
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { useCart } from '@/contexts/CartContext'; // Added
-import { Badge } from '@/components/ui/badge'; // Added for cart count
+import { useCart } from '@/contexts/CartContext';
+import { Badge } from '@/components/ui/badge';
 
-const navLinks = [
+const DONATION_FEATURE_LS_KEY = "unishop_donation_feature_enabled";
+
+const baseNavLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/products', label: 'Shop Uniforms', icon: ShoppingBag },
-  { href: '/donate', label: 'Donate', icon: Gift },
+  // Donate link will be added conditionally
 ];
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { getItemCount } = useCart(); // Added
+  const { getItemCount } = useCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
@@ -38,7 +40,8 @@ export default function Header() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [cartItemCount, setCartItemCount] = useState(0); // Added
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const [isDonationFeatureEnabled, setIsDonationFeatureEnabled] = useState(true);
 
   const checkAuthState = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -53,13 +56,22 @@ export default function Header() {
         setIsLoggedIn(false);
         setCurrentUserRole(null);
         setCurrentUserName(null);
+        // Clear all auth related items
         localStorage.removeItem('unishop_user_role');
         localStorage.removeItem('unishop_user_displayName');
         localStorage.removeItem('unishop_user_id');
-        localStorage.removeItem('isAdminLoggedIn');
+        localStorage.removeItem('isAdminLoggedIn'); // If you use this specific key
       }
     }
   }, []);
+  
+  const checkDonationFeatureState = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const storedValue = localStorage.getItem(DONATION_FEATURE_LS_KEY);
+      setIsDonationFeatureEnabled(storedValue === null ? true : storedValue === "true");
+    }
+  }, []);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -68,16 +80,24 @@ export default function Header() {
   useEffect(() => {
     if (isClient) {
       checkAuthState();
-      setCartItemCount(getItemCount()); // Update cart count on client mount and when cart changes
+      checkDonationFeatureState();
+      setCartItemCount(getItemCount()); 
+      
       window.addEventListener('authChange', checkAuthState);
-      if (pathname) checkAuthState(); // Re-check on pathname change
+      window.addEventListener('storage', (event) => {
+        if (event.key === DONATION_FEATURE_LS_KEY) {
+          checkDonationFeatureState();
+        }
+      });
+      if (pathname) checkAuthState(); 
     }
     return () => {
       if (isClient && typeof window !== "undefined") {
         window.removeEventListener('authChange', checkAuthState);
+        window.removeEventListener('storage', checkDonationFeatureState);
       }
     };
-  }, [isClient, pathname, checkAuthState, getItemCount]);
+  }, [isClient, pathname, checkAuthState, getItemCount, checkDonationFeatureState]);
 
 
   const handleLogout = async () => {
@@ -126,6 +146,15 @@ export default function Header() {
       </Button>
     </Link>
   );
+  
+  const getNavLinks = () => {
+      let links = [...baseNavLinks];
+      if (isDonationFeatureEnabled) {
+        links.push({ href: '/donate', label: 'Donate', icon: Gift });
+      }
+      return links;
+  };
+
 
   const renderNavLinks = (isMobile = false) => {
     const handleLinkClick = () => {
@@ -133,8 +162,10 @@ export default function Header() {
     };
 
     const mobileClass = isMobile ? "w-full justify-start text-base py-3 px-4" : "";
+    const currentNavLinks = getNavLinks();
 
-    let linksToRender = navLinks.map((link) => (
+
+    let linksToRender = currentNavLinks.map((link) => (
       <NavLinkItem
         key={link.href}
         href={link.href}

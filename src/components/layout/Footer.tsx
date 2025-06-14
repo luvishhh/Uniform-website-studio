@@ -1,9 +1,14 @@
 
+"use client";
+
 import Link from 'next/link';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 import Logo from '@/components/shared/Logo';
+import React, { useState, useEffect, useCallback } from 'react';
 
-const footerLinks = [
+const DONATION_FEATURE_LS_KEY = "unishop_donation_feature_enabled";
+
+const baseFooterLinks = [
   { href: '/about', label: 'About Us' },
   { href: '/contact', label: 'Contact Us' },
   { href: '/terms', label: 'Terms of Service' },
@@ -19,6 +24,64 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const [isDonationFeatureEnabled, setIsDonationFeatureEnabled] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  const checkDonationFeatureState = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const storedValue = localStorage.getItem(DONATION_FEATURE_LS_KEY);
+      setIsDonationFeatureEnabled(storedValue === null ? true : storedValue === "true");
+    }
+  }, []);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      checkDonationFeatureState();
+      window.addEventListener('storage', (event) => {
+        if (event.key === DONATION_FEATURE_LS_KEY) {
+          checkDonationFeatureState();
+        }
+      });
+    }
+    return () => {
+      if (isClient && typeof window !== "undefined") {
+         window.removeEventListener('storage', checkDonationFeatureState);
+      }
+    };
+  }, [isClient, checkDonationFeatureState]);
+
+  const getFooterLinks = () => {
+    let links = [...baseFooterLinks];
+    // Note: FAQ link is already in baseFooterLinks, so no need to add conditionally for donation here specifically
+    // But other donation-specific links could be added if needed.
+    return links;
+  };
+  
+  const getShopLinks = () => {
+    let links = [
+      { href: "/products", label: "School & College Uniforms" },
+    ];
+    if (isDonationFeatureEnabled) {
+      links.push({ href: "/donate", label: "Donate Uniforms" });
+    }
+    return links;
+  };
+
+  if (!isClient) {
+    // Optional: Render a basic footer or null during SSR / pre-hydration
+    return (
+      <footer className="bg-muted text-muted-foreground border-t">
+        <div className="container mx-auto px-4 md:px-6 py-12 text-center">
+          <p>&copy; {new Date().getFullYear()} UniShop. All rights reserved.</p>
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className="bg-muted text-muted-foreground border-t">
       <div className="container mx-auto px-4 md:px-6 py-12">
@@ -33,7 +96,7 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold font-headline text-foreground mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              {footerLinks.map(link => (
+              {getFooterLinks().map(link => (
                 <li key={link.href}>
                   <Link href={link.href} className="text-sm hover:text-primary transition-colors">
                     {link.label}
@@ -46,8 +109,9 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold font-headline text-foreground mb-4">Shop</h3>
             <ul className="space-y-2">
-              <li><Link href="/products" className="text-sm hover:text-primary transition-colors">School & College Uniforms</Link></li>
-              <li><Link href="/donate" className="text-sm hover:text-primary transition-colors">Donate Uniforms</Link></li>
+              {getShopLinks().map(link => (
+                 <li key={link.href}><Link href={link.href} className="text-sm hover:text-primary transition-colors">{link.label}</Link></li>
+              ))}
             </ul>
           </div>
           
