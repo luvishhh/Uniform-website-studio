@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import type { User, StudentUser, InstitutionUser, DealerUser } from '@/types'; // Ensure all specific user types are imported
+import type { User, StudentUser, InstitutionUser, DealerUser, CartItem } from '@/types'; // Ensure all specific user types are imported
 import bcrypt from 'bcryptjs';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -24,7 +24,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
     
     const finalUser = {
         ...userWithoutPasswordAndMongoId,
-        id: _id!.toString() 
+        id: _id!.toString(),
+        cart: user.cart || [], // Ensure cart is always an array
     };
 
     return NextResponse.json(finalUser, { status: 200 });
@@ -45,11 +46,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const body = await request.json();
-    const { currentPassword, newPassword, ...updateData } = body;
+    const { currentPassword, newPassword, cart, ...updateData } = body;
 
     const user = await db.collection<User>('users').findOne({ _id: new ObjectId(userId) });
     if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: 'User not found' }, { status: 403 }); // 403 if user not found for update by ID
     }
 
     // Password update logic
@@ -64,34 +65,47 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.passwordHash = await bcrypt.hash(newPassword, 10);
     }
 
+    // Cart update logic
+    if (cart !== undefined && Array.isArray(cart)) {
+      updateData.cart = cart as CartItem[]; // Type assertion after validation
+    } else if (cart !== undefined) {
+      // If 'cart' is present but not an array, it's a bad request
+      return NextResponse.json({ message: 'Invalid cart format. Expected an array.' }, { status: 400 });
+    }
+
+
     // Prevent role and email from being updated directly via this route for non-admins
     // and ensure specific fields are updated based on role if needed.
-    // Example: if (user.role === 'student') { updateData.schoolCollegeName = body.schoolCollegeName }
-    // For simplicity, we'll allow updating fields present in updateData, excluding sensitive ones like 'role'.
     delete updateData.role; 
-    delete updateData.email; // Email change typically requires verification, handle elsewhere or by admin.
-    delete updateData.rollNumber; // Roll number should not be changed.
+    delete updateData.email; 
+    delete updateData.rollNumber; 
     
 
+    if (Object.keys(updateData).length === 0) {
+        return NextResponse.json({ message: 'No update data provided or only cart was updated (which is fine).', user: user }, { status: 200 });
+    }
+    
     const result = await db.collection('users').updateOne(
       { _id: new ObjectId(userId) },
       { $set: updateData }
     );
 
     if (result.matchedCount === 0) {
+      // This case should ideally be caught by the initial user find.
       return NextResponse.json({ message: 'User not found for update (though found initially)' }, { status: 404 });
     }
     
     // Fetch the updated user to return
-    const updatedUser = await db.collection<User>('users').findOne({ _id: new ObjectId(userId) });
-    if (!updatedUser) { // Should not happen if update was successful
+    const updatedUserDoc = await db.collection<User>('users').findOne({ _id: new ObjectId(userId) });
+    if (!updatedUserDoc) { 
         return NextResponse.json({ message: 'Failed to retrieve updated user' }, { status: 500 });
     }
 
-    const { passwordHash, _id, ...userWithoutPasswordAndMongoId } = updatedUser;
+    const { passwordHash: ph, _id, ...userWithoutPasswordAndMongoId } = updatedUserDoc;
     const finalUser = {
         ...userWithoutPasswordAndMongoId,
-        id: _id!.toString()
+        id: _id!.toString(),
+        cart: updatedUserDoc.cart || [], // Ensure cart is always an array
     };
 
     return NextResponse.json({ message: 'Profile updated successfully', user: finalUser }, { status: 200 });
