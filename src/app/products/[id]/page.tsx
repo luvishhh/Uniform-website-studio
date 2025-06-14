@@ -15,7 +15,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import type { Review } from "@/types";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useParams } from 'next/navigation'; // Import useParams
+import { useParams } from 'next/navigation';
+import { Card } from "@/components/ui/card"; // Added import for Card
 
 // Dummy Label component for Select
 const Label = ({htmlFor, children, className}: {htmlFor: string, children: React.ReactNode, className?:string}) => (
@@ -30,9 +31,9 @@ const getInitials = (name: string = "") => {
     return names.map(n => n[0]).join('').toUpperCase() || 'U';
 };
 
-export default function ProductDetailPage() { // Removed params from props
-  const params = useParams<{ id: string }>(); // Use the useParams hook
-  const product = getProductById(params.id); // Access params.id from the hook's return value
+export default function ProductDetailPage() {
+  const params = useParams<{ id: string }>();
+  const product = getProductById(params.id);
 
   const [productReviews, setProductReviews] = useState<Review[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
