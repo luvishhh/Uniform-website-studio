@@ -1,15 +1,19 @@
 
 import { connectToDatabase } from '@/lib/mongodb';
-import type { User, StudentUser } from '@/types';
+import type { User, StudentUser, InstitutionUser, DealerUser } from '@/types';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { ObjectId } from 'mongodb';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
-  throw new Error('Please define the JWT_SECRET environment variable');
+  // In a real app, you might want to log this error or handle it differently
+  // For now, throwing an error during server startup is appropriate.
+  console.error('FATAL ERROR: JWT_SECRET environment variable is not defined.');
+  throw new Error('JWT_SECRET is not set, authentication cannot proceed.');
 }
 
 export async function POST(request: Request) {
@@ -22,31 +26,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Identifier, password, and role are required' }, { status: 400 });
     }
 
-    let user: User | null = null;
+    let userFromDb: User | null = null;
+    let query: any = { role };
 
     if (role === 'student') {
-      user = await db.collection<StudentUser>('users').findOne({ rollNumber: identifier, role: 'student' });
+      query.rollNumber = identifier;
     } else if (['institution', 'dealer', 'admin'].includes(role)) {
-      user = await db.collection<User>('users').findOne({ email: identifier, role: role });
+      query.email = identifier;
     } else {
       return NextResponse.json({ message: 'Invalid role specified' }, { status: 400 });
     }
+    
+    userFromDb = await db.collection<User>('users').findOne(query);
 
-    if (!user) {
+    if (!userFromDb) {
       return NextResponse.json({ message: 'Invalid credentials or user not found for this role' }, { status: 401 });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, userFromDb.passwordHash);
 
     if (!isPasswordValid) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
+    // Ensure _id is converted to string id
+    const userIdString = userFromDb._id!.toString();
+
     const tokenPayload = {
-      userId: user._id?.toString() || user.id, // Use _id if available from MongoDB
-      role: user.role,
-      email: user.email, // Could be undefined for students
-      name: role === 'student' ? (user as StudentUser).fullName : (user as any).institutionName || (user as any).dealerName || user.email,
+      userId: userIdString,
+      role: userFromDb.role,
+      email: userFromDb.email, // Might be undefined for students not providing it
+      name: role === 'student' ? (userFromDb as StudentUser).fullName : 
+            role === 'institution' ? (userFromDb as InstitutionUser).institutionName :
+            role === 'dealer' ? (userFromDb as DealerUser).dealerName :
+            userFromDb.email, // Fallback for admin or others
     };
     
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '1d' });
@@ -61,19 +74,17 @@ export async function POST(request: Request) {
     });
 
     // Exclude passwordHash from the returned user object
-    const { passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash, _id, ...userWithoutPasswordAndMongoId } = userFromDb;
     
-    // Ensure _id is converted to id string
-    if (userWithoutPassword._id) {
-        (userWithoutPassword as any).id = userWithoutPassword._id.toString(); // Ensure id field is populated
-        delete userWithoutPassword._id;
-    }
-
+    const userToReturn = {
+        ...userWithoutPasswordAndMongoId,
+        id: userIdString, // Ensure 'id' field is the string representation
+    };
 
     return NextResponse.json({ 
         message: 'Login successful', 
-        token, // Also returning token in body for client-side access if needed (e.g., for header state)
-        user: userWithoutPassword 
+        token, // Also returning token in body for client-side access if needed
+        user: userToReturn 
     }, { status: 200 });
 
   } catch (error) {

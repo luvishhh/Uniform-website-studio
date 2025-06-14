@@ -2,7 +2,7 @@
 import type { ObjectId } from 'mongodb';
 
 export type Product = {
-  id: string;
+  id: string; // String representation of _id
   _id?: ObjectId; // For MongoDB
   name: string;
   description: string;
@@ -18,7 +18,7 @@ export type Product = {
 };
 
 export type Category = {
-  id:string;
+  id:string; // String representation of _id
   _id?: ObjectId; // For MongoDB
   name: 'School' | 'College';
   description: string;
@@ -35,8 +35,8 @@ export type BaseUser = {
   passwordHash: string;
   role: 'student' | 'institution' | 'dealer' | 'admin';
   contactNumber?: string;
-  imageUrl?: string; // Added for profile picture
-  cart?: CartItem[]; // Added for user's shopping cart
+  imageUrl?: string;
+  cart: CartItem[]; // Ensure cart is part of the base user type and initialized
 };
 
 export type StudentUser = BaseUser & {
@@ -59,7 +59,7 @@ export type StudentUser = BaseUser & {
 
 export type InstitutionUser = BaseUser & {
   role: 'institution';
-  email: string;
+  email: string; // Institution email is mandatory
   institutionName: string;
   institutionType: 'school' | 'college';
   institutionalAddress: string;
@@ -68,7 +68,7 @@ export type InstitutionUser = BaseUser & {
 
 export type DealerUser = BaseUser & {
   role: 'dealer';
-  email: string;
+  email: string; // Dealer email is mandatory
   dealerName: string;
   contactNumber: string;
   businessAddress: string;
@@ -77,7 +77,7 @@ export type DealerUser = BaseUser & {
 
 export type AdminUser = BaseUser & {
   role: 'admin';
-  email: string;
+  email: string; // Admin email is mandatory
 };
 
 export type User = StudentUser | InstitutionUser | DealerUser | AdminUser;
@@ -95,6 +95,7 @@ export type CartItem = {
 };
 
 export type OrderStatus = 
+  | 'Pending Payment'
   | 'Pending Dealer Assignment' 
   | 'Awaiting Dealer Acceptance' 
   | 'Processing by Dealer'       
@@ -103,13 +104,12 @@ export type OrderStatus =
   | 'Confirmed'                  
   | 'Shipped'
   | 'Delivered'
-  | 'Cancelled'
-  | 'Pending Payment'; // Added for payment gateway flow
+  | 'Cancelled';
 
 export type Order = {
-  id: string;
+  id: string; // String representation of _id
   _id?: ObjectId; // For MongoDB
-  userId: string; 
+  userId: string; // Store as string, referencing User.id
   items: CartItem[];
   totalAmount: number;
   status: OrderStatus;
@@ -124,16 +124,15 @@ export type Order = {
   };
   paymentMethod: string;
   estimatedDelivery?: string; // Should be ISOString
-  assignedDealerId?: string | null; 
+  assignedDealerId?: string | null; // Store as string, referencing DealerUser.id
   dealerRejectionReason?: string;
-  // Razorpay specific fields (optional)
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;
 };
 
 export type Donation = {
-  id: string;
+  id: string; // String representation of _id
   _id?: ObjectId; // For MongoDB
   uniformType: string;
   quantity: number;
@@ -146,15 +145,16 @@ export type Donation = {
 };
 
 export type Review = {
-  id: string;
+  id: string; // String representation of _id
   _id?: ObjectId; // For MongoDB
   productId: string;
-  userId?: string; // Optional: if reviews can be anonymous or linked to users
+  userId?: string; 
   userName: string;
-  avatarUrl?: string; // Optional for user avatar
+  avatarUrl?: string; 
   rating: number; // 1 to 5
   title: string;
   comment: string;
   date: string; // ISOString for review date
   verifiedPurchase?: boolean;
 };
+

@@ -13,9 +13,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-
-// This would typically come from your environment variables on the frontend
-// const RAZORPAY_KEY_ID_FRONTEND = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+import type { User } from "@/types";
 
 
 export default function CheckoutPage() {
@@ -25,8 +23,9 @@ export default function CheckoutPage() {
   const [isClient, setIsClient] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("razorpay");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Form state (basic example, consider using react-hook-form for production)
+
   const [shippingDetails, setShippingDetails] = useState({
     firstName: "",
     lastName: "",
@@ -43,16 +42,33 @@ export default function CheckoutPage() {
     setShippingDetails(prev => ({ ...prev, [id]: value }));
   };
 
-
   useEffect(() => {
     setIsClient(true);
-    if (cartItems.length === 0 && typeof window !== 'undefined') {
-        toast({
-            title: "Your cart is empty!",
-            description: "Redirecting you to continue shopping.",
-            variant: "destructive"
-        });
-        router.push('/products');
+    if (typeof window !== 'undefined') {
+        const storedUserId = localStorage.getItem('unishop_user_id');
+        const storedUserDisplayName = localStorage.getItem('unishop_user_displayName');
+        const storedUserEmail = localStorage.getItem('unishop_user_email'); // Assuming email is stored
+
+        if (storedUserId) {
+            // For mock, just set some defaults if user is logged in
+            // In a real app, you'd fetch user details or have them in a context
+             setCurrentUser({ id: storedUserId } as User); // Partial user for now
+             setShippingDetails(prev => ({
+                ...prev,
+                firstName: storedUserDisplayName?.split(' ')[0] || "",
+                lastName: storedUserDisplayName?.split(' ').slice(1).join(' ') || "",
+                email: storedUserEmail || "", // You might need to fetch this or store it at login
+             }));
+        }
+
+        if (cartItems.length === 0) {
+            toast({
+                title: "Your cart is empty!",
+                description: "Redirecting you to continue shopping.",
+                variant: "destructive"
+            });
+            router.push('/products');
+        }
     }
   }, [cartItems, router, toast]);
 
@@ -64,15 +80,31 @@ export default function CheckoutPage() {
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true);
+
+    if (!currentUser || !currentUser.id) {
+        toast({ title: "User Not Identified", description: "Please log in to place an order.", variant: "destructive" });
+        setIsProcessing(false);
+        router.push("/login");
+        return;
+    }
+    if (!shippingDetails.firstName || !shippingDetails.address || !shippingDetails.city || !shippingDetails.zip || !shippingDetails.country) {
+        toast({ title: "Missing Shipping Details", description: "Please fill in all required shipping fields.", variant: "destructive" });
+        setIsProcessing(false);
+        return;
+    }
+
+
+    let paymentVerified = false;
+    let razorpayDetails = {};
+
     if (selectedPaymentMethod === 'razorpay') {
-      // --- Step 1: Create Order on your backend ---
       try {
         const createOrderResponse = await fetch('/api/payment/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            amount: total, // Send total amount
-            currency: 'INR', // Or your desired currency
+            amount: total, 
+            currency: 'INR',
             receipt: `rcpt_${Date.now()}`,
             notes: { customerName: `${shippingDetails.firstName} ${shippingDetails.lastName}`, email: shippingDetails.email }
           }),
@@ -83,87 +115,76 @@ export default function CheckoutPage() {
           throw new Error(errorData.message || 'Failed to create Razorpay order with backend.');
         }
         const orderData = await createOrderResponse.json();
-        const { orderId, amount: razorpayAmount, currency: razorpayCurrency } = orderData;
-        // const keyId = orderData.keyId; // If your backend sends it
-
-        // --- Step 2: Open Razorpay Checkout (Simulated for this mock) ---
-        // In a real app, you'd use Razorpay's SDK here:
-        // const options = {
-        //   key: keyId, // From your backend or process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
-        //   amount: razorpayAmount,
-        //   currency: razorpayCurrency,
-        //   name: "UniShop",
-        //   description: "Uniform Purchase",
-        //   order_id: orderId,
-        //   handler: async function (response: any) {
-        //     // --- Step 3: Verify Payment on your backend ---
-        //     const verifyResponse = await fetch('/api/payment/verify-signature', {
-        //       method: 'POST',
-        //       headers: { 'Content-Type': 'application/json' },
-        //       body: JSON.stringify({
-        //         razorpay_order_id: response.razorpay_order_id,
-        //         razorpay_payment_id: response.razorpay_payment_id,
-        //         razorpay_signature: response.razorpay_signature,
-        //         internalOrderId: "YOUR_INTERNAL_ORDER_ID_IF_ANY" // Pass if needed
-        //       }),
-        //     });
-        //     const verificationResult = await verifyResponse.json();
-        //     if (verifyResponse.ok && verificationResult.status === 'success') {
-        //        toast({ title: "Payment Successful!", description: "Thank you for your purchase." });
-        //        clearCart();
-        //        router.push('/'); // Or order confirmation page
-        //     } else {
-        //        toast({ title: "Payment Verification Failed", description: verificationResult.message || "Please contact support.", variant: "destructive" });
-        //     }
-        //   },
-        //   prefill: { name: shippingDetails.firstName, email: shippingDetails.email },
-        //   notes: { address: shippingDetails.address },
-        //   theme: { color: "#3F51B5" }
-        // };
-        // const rzp = new (window as any).Razorpay(options);
-        // rzp.open();
-
-        // --- MOCK: Simulate successful payment and call verify ---
-        console.log(`Mock: Razorpay order created with ID: ${orderId}. Simulating payment...`);
-        const mockPaymentResponse = {
-            razorpay_order_id: orderId,
-            razorpay_payment_id: `mock_pay_${Date.now()}`,
-            razorpay_signature: `mock_sig_${Date.now()}`
+        
+        razorpayDetails = {
+            razorpayOrderId: orderData.orderId,
+            razorpayPaymentId: `mock_pay_${Date.now()}`, // Mock payment ID for simulation
+            razorpaySignature: `mock_sig_${Date.now()}`  // Mock signature for simulation
         };
+
         const verifyResponse = await fetch('/api/payment/verify-signature', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(mockPaymentResponse),
+            body: JSON.stringify(razorpayDetails),
         });
         const verificationResult = await verifyResponse.json();
 
         if (verifyResponse.ok && verificationResult.status === 'success') {
-            toast({ title: "Payment Successful (Mock)!", description: "Thank you for your purchase. Your order is being processed." });
-            clearCart();
-            router.push('/'); // Or order confirmation page
-            // Note: Real email notifications would be triggered by the backend after successful verification.
+            paymentVerified = true;
         } else {
             toast({ title: "Payment Verification Failed (Mock)", description: verificationResult.message || "Please try again or contact support.", variant: "destructive" });
         }
-
       } catch (error: any) {
-        toast({ title: "Checkout Error", description: error.message || "An unexpected error occurred during checkout.", variant: "destructive" });
-      } finally {
-        setIsProcessing(false);
+        toast({ title: "Checkout Error", description: error.message || "An unexpected error occurred during payment processing.", variant: "destructive" });
       }
     } else {
-      // Handle other mock payment methods
-      toast({
-        title: "Order Placed (Mock)!",
-        description: `Thank you for your purchase using ${selectedPaymentMethod}. Your order is being processed.`,
-      });
-      clearCart();
-      router.push('/'); 
-      setIsProcessing(false);
+      // For other mock payment methods, assume payment is instantly "verified"
+      paymentVerified = true;
+      razorpayDetails = { paymentMethod: selectedPaymentMethod };
     }
+
+    if (paymentVerified) {
+        // Now save the order to the database
+        try {
+            const finalOrderPayload = {
+                userId: currentUser.id,
+                items: cartItems,
+                totalAmount: total,
+                shippingAddress: {
+                    name: `${shippingDetails.firstName} ${shippingDetails.lastName}`,
+                    email: shippingDetails.email,
+                    street: shippingDetails.address,
+                    city: shippingDetails.city,
+                    zip: shippingDetails.zip,
+                    country: shippingDetails.country,
+                },
+                paymentMethod: selectedPaymentMethod,
+                ...(selectedPaymentMethod === 'razorpay' && razorpayDetails), // Add razorpay details if applicable
+            };
+
+            const saveOrderResponse = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finalOrderPayload),
+            });
+
+            const savedOrderResult = await saveOrderResponse.json();
+
+            if (saveOrderResponse.ok) {
+                toast({ title: "Order Placed Successfully!", description: `Thank you for your purchase. Order ID: ${savedOrderResult.order.id.substring(0,8)}...` });
+                clearCart();
+                router.push('/'); 
+            } else {
+                toast({ title: "Order Placement Failed", description: savedOrderResult.message || "Could not save your order. Please try again.", variant: "destructive" });
+            }
+        } catch (error: any) {
+            toast({ title: "Order Saving Error", description: error.message || "An unexpected error occurred while saving your order.", variant: "destructive" });
+        }
+    }
+    setIsProcessing(false);
   };
 
-  if (!isClient || cartItems.length === 0) {
+  if (!isClient || (cartItems.length === 0 && router.pathname === '/checkout')) { // Avoid redirect if already navigating away
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
@@ -178,8 +199,6 @@ export default function CheckoutPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      {/* Include Razorpay SDK script if you were doing a real integration */}
-      {/* <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" /> */}
       <main className="flex-grow container mx-auto px-4 md:px-6 py-8">
         <h1 className="text-3xl md:text-4xl font-bold font-headline mb-8 text-center">Checkout</h1>
         
@@ -190,39 +209,39 @@ export default function CheckoutPage() {
               <form className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="John" value={shippingDetails.firstName} onChange={handleInputChange} />
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input id="firstName" placeholder="John" value={shippingDetails.firstName} onChange={handleInputChange} required/>
                   </div>
                   <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Doe" value={shippingDetails.lastName} onChange={handleInputChange}/>
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input id="lastName" placeholder="Doe" value={shippingDetails.lastName} onChange={handleInputChange} required/>
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" placeholder="john.doe@example.com" value={shippingDetails.email} onChange={handleInputChange}/>
+                  <Label htmlFor="email">Email Address *</Label>
+                  <Input id="email" type="email" placeholder="john.doe@example.com" value={shippingDetails.email} onChange={handleInputChange} required/>
                 </div>
                 <div>
-                  <Label htmlFor="address">Street Address</Label>
-                  <Input id="address" placeholder="123 Main St" value={shippingDetails.address} onChange={handleInputChange}/>
+                  <Label htmlFor="address">Street Address *</Label>
+                  <Input id="address" placeholder="123 Main St" value={shippingDetails.address} onChange={handleInputChange} required/>
                 </div>
                 <div className="grid sm:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input id="city" placeholder="Anytown" value={shippingDetails.city} onChange={handleInputChange}/>
+                    <Label htmlFor="city">City *</Label>
+                    <Input id="city" placeholder="Anytown" value={shippingDetails.city} onChange={handleInputChange} required/>
                   </div>
                   <div>
                     <Label htmlFor="state">State / Province</Label>
                     <Input id="state" placeholder="CA" value={shippingDetails.state} onChange={handleInputChange}/>
                   </div>
                   <div>
-                    <Label htmlFor="zip">ZIP / Postal Code</Label>
-                    <Input id="zip" placeholder="90210" value={shippingDetails.zip} onChange={handleInputChange}/>
+                    <Label htmlFor="zip">ZIP / Postal Code *</Label>
+                    <Input id="zip" placeholder="90210" value={shippingDetails.zip} onChange={handleInputChange} required/>
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Input id="country" placeholder="e.g., United States" value={shippingDetails.country} onChange={handleInputChange}/>
+                  <Label htmlFor="country">Country *</Label>
+                  <Input id="country" placeholder="e.g., United States" value={shippingDetails.country} onChange={handleInputChange} required/>
                 </div>
               </form>
             </section>
@@ -311,7 +330,7 @@ export default function CheckoutPage() {
               size="lg" 
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg" 
               onClick={handleConfirmOrder}
-              disabled={isProcessing || cartItems.length === 0}
+              disabled={isProcessing || cartItems.length === 0 || !currentUser}
             >
               {isProcessing ? "Processing..." : <><CreditCard className="mr-2 h-5 w-5" /> Confirm Order</>}
             </Button>

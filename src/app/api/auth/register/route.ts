@@ -20,81 +20,88 @@ export async function POST(request: Request) {
     }
 
     // Check if user already exists
-    let existingUser;
-    if (role === 'student' && userData.rollNumber) {
-      existingUser = await db.collection<User>('users').findOne({ role: 'student', rollNumber: userData.rollNumber });
-    } else if (userData.email) {
-      existingUser = await db.collection<User>('users').findOne({ email: userData.email, role });
+    let existingUserQuery: any = { role };
+    let identifierField: string;
+
+    if (role === 'student') {
+        if (!userData.rollNumber) return NextResponse.json({ message: 'Roll number is required for student registration.' }, { status: 400 });
+        existingUserQuery.rollNumber = userData.rollNumber;
+        identifierField = 'Roll number';
+    } else { // institution, dealer, admin
+        if (!userData.email) return NextResponse.json({ message: 'Email is required for this role.' }, { status: 400 });
+        existingUserQuery.email = userData.email;
+        identifierField = 'Email';
     }
+    
+    const existingUser = await db.collection<User>('users').findOne(existingUserQuery);
 
     if (existingUser) {
-      const identifier = role === 'student' ? 'Roll number' : 'Email';
-      return NextResponse.json({ message: `${identifier} already exists for this role.` }, { status: 409 });
+      return NextResponse.json({ message: `${identifierField} already exists for this role.` }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let newUser: Omit<User, 'id'> & { _id?: ObjectId; cart: CartItem[] };
+    let newUserObject: Omit<User, 'id' | '_id'> & { cart: CartItem[] }; // Prepare object for insertion, without _id or string id
 
     switch (role) {
       case 'student':
-        if (!userData.rollNumber || !userData.schoolCollegeName || !userData.fullName || !userData.institutionType || !userData.gradeOrCourse || !userData.parentName || !userData.parentContactNumber) {
+        if (!userData.schoolCollegeName || !userData.fullName || !userData.institutionType || !userData.gradeOrCourse || !userData.parentName || !userData.parentContactNumber) {
           return NextResponse.json({ message: 'Missing required student fields' }, { status: 400 });
         }
-        newUser = {
+        newUserObject = {
           ...userData,
           role: 'student',
           passwordHash: hashedPassword,
-          cart: [], // Initialize empty cart
-        } as Omit<StudentUser, 'id'> & { cart: CartItem[] };
+          cart: [], 
+        } as Omit<StudentUser, 'id' | '_id'> & { cart: CartItem[] };
         break;
       case 'institution':
-        if (!userData.email || !userData.institutionName || !userData.institutionType || !userData.institutionalAddress || !userData.contactNumber) {
+        if (!userData.institutionName || !userData.institutionType || !userData.institutionalAddress || !userData.contactNumber) {
           return NextResponse.json({ message: 'Missing required institution fields' }, { status: 400 });
         }
-        newUser = {
+        newUserObject = {
           ...userData,
           role: 'institution',
           passwordHash: hashedPassword,
-          cart: [], // Initialize empty cart
-        } as Omit<InstitutionUser, 'id'> & { cart: CartItem[] };
+          cart: [], 
+        } as Omit<InstitutionUser, 'id' | '_id'> & { cart: CartItem[] };
         break;
       case 'dealer':
-         if (!userData.email || !userData.dealerName || !userData.contactNumber || !userData.businessAddress || !userData.gstinNumber) {
+         if (!userData.dealerName || !userData.contactNumber || !userData.businessAddress || !userData.gstinNumber) {
           return NextResponse.json({ message: 'Missing required dealer fields' }, { status: 400 });
         }
-        newUser = {
+        newUserObject = {
           ...userData,
           role: 'dealer',
           passwordHash: hashedPassword,
-          cart: [], // Initialize empty cart
-        } as Omit<DealerUser, 'id'> & { cart: CartItem[] };
+          cart: [], 
+        } as Omit<DealerUser, 'id' | '_id'> & { cart: CartItem[] };
         break;
-      case 'admin': // Basic admin registration, could be more restricted
-        if (!userData.email) {
-             return NextResponse.json({ message: 'Email is required for admin' }, { status: 400 });
-        }
-        newUser = {
+      case 'admin': 
+        newUserObject = {
             ...userData,
             role: 'admin',
             passwordHash: hashedPassword,
-            cart: [], // Initialize empty cart
-        } as Omit<AdminUser, 'id'> & { cart: CartItem[] };
+            cart: [],
+        } as Omit<AdminUser, 'id' | '_id'> & { cart: CartItem[] };
         break;
       default:
         return NextResponse.json({ message: 'Invalid user role' }, { status: 400 });
     }
 
-    const result = await db.collection('users').insertOne(newUser);
+    const result = await db.collection('users').insertOne(newUserObject as any); // Insert without _id
 
     if (!result.insertedId) {
         return NextResponse.json({ message: 'Failed to register user' }, { status: 500 });
     }
     
     // Exclude passwordHash from the returned user object
-    const { passwordHash, ...userWithoutPassword } = newUser;
+    const { passwordHash: ph, ...userWithoutPassword } = newUserObject;
 
-    return NextResponse.json({ message: 'User registered successfully', user: { ...userWithoutPassword, id: result.insertedId.toString()} }, { status: 201 });
+    return NextResponse.json({ 
+        message: 'User registered successfully', 
+        user: { ...userWithoutPassword, id: result.insertedId.toString()} 
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Registration error:', error);
@@ -102,4 +109,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: `Internal server error: ${errorMessage}` }, { status: 500 });
   }
 }
-

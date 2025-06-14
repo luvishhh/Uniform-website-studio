@@ -7,93 +7,118 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockOrders as initialMockOrders, getUserById, mockUsers } from "@/lib/mockData";
-import type { Order, OrderStatus, DealerUser } from "@/types";
+import { mockOrders as initialMockOrders, getUserById, mockUsers } from "@/lib/mockData"; // Using initialMockOrders for demo
+import type { Order, OrderStatus, DealerUser, User } from "@/types";
 import { Search, Eye, Download, ShoppingCart, ArrowLeft, CheckCircle, XCircle, Edit } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation"; // Added for potential redirect
 
 const defaultDealerForDemo = mockUsers.find(u => u.id === 'deal_1' && u.role === 'dealer') as DealerUser | undefined;
 
 export default function DealerOrdersPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
-  const [orders, setOrders] = useState<Order[]>(initialMockOrders); // Local state for orders
-  const [currentDealer, setCurrentDealer] = useState<DealerUser | null>(defaultDealerForDemo || null);
-  const [isLoading, setIsLoading] = useState<boolean>(!defaultDealerForDemo);
+  const [orders, setOrders] = useState<Order[]>([]); // Start with empty, fetch or use mock
+  const [currentDealer, setCurrentDealer] = useState<DealerUser | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Fetch current dealer and all orders (mocked for now)
   useEffect(() => {
-    const fetchDealer = () => {
-        const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
-        const storedUserRole = typeof window !== "undefined" ? localStorage.getItem('unishop_user_role') : null;
-        let activeUser: DealerUser | null = null;
+    const initializeData = async () => {
+      setIsLoading(true);
+      // Simulate fetching current dealer
+      const storedUserId = typeof window !== "undefined" ? localStorage.getItem('unishop_user_id') : null;
+      const storedUserRole = typeof window !== "undefined" ? localStorage.getItem('unishop_user_role') : null;
+      let activeUser: DealerUser | null = null;
 
-        if (storedUserId && storedUserRole === 'dealer') {
-            const user = getUserById(storedUserId) as DealerUser | undefined;
-            if (user) {
-                activeUser = user;
-            }
-        }
-        
-        if (!activeUser && defaultDealerForDemo) {
-            activeUser = defaultDealerForDemo;
-        }
-        setCurrentDealer(activeUser);
-        setIsLoading(false);
+      if (storedUserId && storedUserRole === 'dealer') {
+        // In a real app, fetch from API: const user = await fetch(`/api/user/${storedUserId}`).then(res => res.json());
+        const user = getUserById(storedUserId) as DealerUser | undefined; // Using mock
+        if (user) activeUser = user;
+      }
+      
+      if (!activeUser && defaultDealerForDemo) {
+          activeUser = defaultDealerForDemo;
+      }
+      setCurrentDealer(activeUser);
+
+      // Simulate fetching all orders (in a real app, this would be an API call)
+      // For now, we use the initialMockOrders and filter client-side based on dealer.
+      // A real backend would likely provide an endpoint /api/dealer/orders that returns only relevant orders.
+      setOrders(initialMockOrders); 
+      setIsLoading(false);
     };
-    fetchDealer();
+    initializeData();
   }, []);
 
 
-  const handleAcceptOrder = (orderId: string) => {
+  const updateOrderStatusOnServer = async (orderId: string, newStatus: OrderStatus, dealerId?: string | null, rejectionReason?: string) => {
+    try {
+      const payload: any = { status: newStatus };
+      if (dealerId !== undefined) payload.assignedDealerId = dealerId;
+      if (rejectionReason) payload.dealerRejectionReason = rejectionReason;
+
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to update order status');
+      }
+      // Update local state with the server's response
+      setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? result.order : o));
+      return result.order as Order;
+    } catch (error: any) {
+      toast({ title: "Update Error", description: error.message, variant: "destructive" });
+      return null;
+    }
+  };
+
+  const handleAcceptOrder = async (orderId: string) => {
     if (!currentDealer) {
         toast({ title: "Error", description: "Dealer information not available.", variant: "destructive" });
         return;
     }
-    setOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId
-          ? { ...order, status: 'Processing by Dealer', assignedDealerId: currentDealer.id }
-          : order
-      )
-    );
-    toast({
-      title: "Order Accepted",
-      description: `Order #${orderId.substring(0, 8)} has been accepted and assigned to you.`,
-      variant: "default",
-    });
+    const updatedOrder = await updateOrderStatusOnServer(orderId, 'Processing by Dealer', currentDealer.id);
+    if (updatedOrder) {
+        toast({
+            title: "Order Accepted",
+            description: `Order #${orderId.substring(0, 8)} has been assigned to you.`,
+            variant: "default",
+        });
+    }
   };
 
-  const handleRejectOrder = (orderId: string) => {
-     setOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId
-          ? { ...order, status: 'Pending Dealer Assignment', assignedDealerId: null, dealerRejectionReason: "Rejected by dealer" } // Or specific status like 'Dealer Rejected'
-          : order
-      )
-    );
-    toast({
-      title: "Order Rejected",
-      description: `Order #${orderId.substring(0, 8)} has been rejected and returned to the pool.`,
-      variant: "default", // Or "destructive" if preferred
-    });
+  const handleRejectOrder = async (orderId: string) => {
+    const updatedOrder = await updateOrderStatusOnServer(orderId, 'Pending Dealer Assignment', null, "Rejected by dealer");
+    if (updatedOrder) {
+        toast({
+            title: "Order Rejected",
+            description: `Order #${orderId.substring(0, 8)} returned to pool.`,
+            variant: "default",
+        });
+    }
   };
 
-  const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-    toast({
-        title: "Order Status Update (Mock)",
-        description: `Order #${orderId.substring(0,8)} status mock-updated to ${newStatus}.`,
-    });
+  const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
+    const updatedOrder = await updateOrderStatusOnServer(orderId, newStatus);
+     if (updatedOrder) {
+        toast({
+            title: "Order Status Updated",
+            description: `Order #${orderId.substring(0,8)} status updated to ${newStatus}.`,
+        });
+    }
   };
 
   const handleViewDetails = (orderId: string) => {
+    // In a real app, this would navigate to an order detail page
+    // For now, using a toast as it's still a mock.
     toast({
         title: "View Order Details (Mock)",
         description: `Viewing details for Order #${orderId.substring(0,8)}... (Mock Feature)`,
@@ -111,12 +136,9 @@ export default function DealerOrdersPage() {
     if (isLoading || !currentDealer) return [];
 
     let displayOrders = orders.filter(order => {
-        // Show orders awaiting any dealer action
         if (order.status === 'Pending Dealer Assignment' && !order.assignedDealerId) return true;
-        // Show orders specifically assigned to this dealer for acceptance
         if (order.status === 'Awaiting Dealer Acceptance' && order.assignedDealerId === currentDealer.id) return true;
-        // Show orders this dealer is currently processing or has processed (for other status updates)
-        if (order.assignedDealerId === currentDealer.id && ['Processing by Dealer', 'Shipped', 'Delivered', 'Cancelled'].includes(order.status)) return true;
+        if (order.assignedDealerId === currentDealer.id && ['Processing by Dealer', 'Shipped', 'Delivered', 'Cancelled', 'Dealer Rejected'].includes(order.status)) return true;
         return false;
     });
 
@@ -124,7 +146,7 @@ export default function DealerOrdersPage() {
       displayOrders = displayOrders.filter(order =>
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.shippingAddress.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (getUserById(order.userId)?.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+        (getUserById(order.userId) as User)?.email?.toLowerCase().includes(searchTerm.toLowerCase()) // Ensure User type for email
       );
     }
     if (statusFilter !== "all") {
@@ -133,7 +155,7 @@ export default function DealerOrdersPage() {
     return displayOrders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
   }, [orders, searchTerm, statusFilter, currentDealer, isLoading]);
 
-  const availableOrderStatuses: OrderStatus[] = ['Pending Dealer Assignment', 'Awaiting Dealer Acceptance', 'Processing by Dealer', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+  const availableOrderStatuses: OrderStatus[] = ['Pending Dealer Assignment', 'Awaiting Dealer Acceptance', 'Processing by Dealer', 'Shipped', 'Delivered', 'Cancelled', 'Dealer Rejected'];
 
 
   if (isLoading) {
@@ -141,7 +163,13 @@ export default function DealerOrdersPage() {
   }
   
   if (!currentDealer) {
-    return <div className="flex justify-center items-center h-64"><p>Could not load dealer information. Please try again.</p></div>;
+    return (
+        <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-10rem)]">
+             <p className="text-xl font-semibold mb-2">Dealer information not available.</p>
+             <p className="text-muted-foreground mb-4">Please ensure you are logged in as a dealer.</p>
+             <Button onClick={() => router.push('/login')}>Go to Login</Button>
+        </div>
+    );
   }
 
 
@@ -214,7 +242,7 @@ export default function DealerOrdersPage() {
                     <TableCell>
                       {order.shippingAddress.name}
                       <br />
-                      <span className="text-xs text-muted-foreground">{getUserById(order.userId)?.email || order.shippingAddress.email}</span>
+                      <span className="text-xs text-muted-foreground">{(getUserById(order.userId) as User)?.email || order.shippingAddress.email || 'N/A'}</span>
                     </TableCell>
                     <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
                     <TableCell>${order.totalAmount.toFixed(2)}</TableCell>
@@ -224,14 +252,12 @@ export default function DealerOrdersPage() {
                         className={`capitalize text-xs whitespace-nowrap ${
                             order.status === 'Delivered' ? 'bg-green-100 text-green-700 border-green-200' :
                             order.status === 'Shipped' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                            order.status === 'Placed' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : // Student perspective, not usually for dealer
-                            order.status === 'Pending Dealer Assignment' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                            order.status === 'Processing by Dealer' || order.status === 'Confirmed' ? 'bg-purple-100 text-purple-700 border-purple-200' :
                             order.status === 'Awaiting Dealer Acceptance' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                            order.status === 'Processing by Dealer' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                            order.status === 'Confirmed' ? 'bg-purple-100 text-purple-700 border-purple-200' : // Can be same as processing
+                            order.status === 'Pending Dealer Assignment' ? 'bg-orange-100 text-orange-700 border-orange-200' :
                             order.status === 'Dealer Rejected' ? 'bg-red-100 text-red-500 border-red-200' :
                             order.status === 'Cancelled' ? 'bg-red-100 text-red-700 border-red-200' :
-                            'bg-gray-100 text-gray-700 border-gray-200'
+                            'bg-gray-100 text-gray-700 border-gray-200' // Default for Placed, etc.
                         }`}
                         >
                         {order.status}
@@ -258,7 +284,7 @@ export default function DealerOrdersPage() {
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
-                                {['Processing by Dealer', 'Shipped', 'Delivered', 'Cancelled'].map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
+                                {['Processing by Dealer', 'Shipped', 'Delivered', 'Cancelled'].filter(s => s !== order.status).map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
                             </SelectContent>
                           </Select>
                           <Button variant="ghost" size="icon" title="Download Invoice" onClick={() => handleDownloadInvoice(order.id)}>
@@ -283,4 +309,3 @@ export default function DealerOrdersPage() {
     </div>
   );
 }
-
